@@ -25,105 +25,288 @@
       "categoryId": "science",
       "text": "Which gas do plants mainly take in from the air for photosynthesis?",
       "options": ["Oxygen", "Carbon dioxide", "Nitrogen", "Hydrogen"],
-      "correctIndex": 1
+      "correctIndex": 1,
+      "difficulty": "easy"
     },
     {
       "id": "sci-002",
       "categoryId": "science",
       "text": "What is the chemical symbol for the element sodium?",
       "options": ["So", "Sd", "Na", "Sn"],
-      "correctIndex": 2
+      "correctIndex": 2,
+      "difficulty": "easy"
     },
     {
       "id": "sci-003",
       "categoryId": "science",
       "text": "Roughly how many bones are in the adult human body?",
       "options": ["206", "186", "226", "246"],
-      "correctIndex": 0
+      "correctIndex": 0,
+      "difficulty": "medium"
     },
     {
       "id": "sci-004",
       "categoryId": "science",
       "text": "Which part of a cell is often called its powerhouse?",
       "options": ["Nucleus", "Ribosome", "Mitochondrion", "Vacuole"],
-      "correctIndex": 2
+      "correctIndex": 2,
+      "difficulty": "medium"
     },
     {
       "id": "sci-005",
       "categoryId": "science",
       "text": "What is the closest planet to the Sun?",
       "options": ["Venus", "Mercury", "Mars", "Earth"],
-      "correctIndex": 1
+      "correctIndex": 1,
+      "difficulty": "easy"
+    },
+    {
+      "id": "sci-006",
+      "categoryId": "science",
+      "text": "What is the hardest naturally occurring substance on Earth?",
+      "options": ["Quartz", "Diamond", "Granite", "Topaz"],
+      "correctIndex": 1,
+      "difficulty": "easy"
+    },
+    {
+      "id": "sci-007",
+      "categoryId": "science",
+      "text": "Which gas makes up the largest share of Earth's atmosphere?",
+      "options": ["Oxygen", "Nitrogen", "Carbon dioxide", "Argon"],
+      "correctIndex": 1,
+      "difficulty": "medium"
+    },
+    {
+      "id": "sci-008",
+      "categoryId": "science",
+      "text": "Which organ produces the insulin that regulates blood sugar?",
+      "options": ["Liver", "Kidney", "Pancreas", "Spleen"],
+      "correctIndex": 2,
+      "difficulty": "medium"
+    },
+    {
+      "id": "sci-009",
+      "categoryId": "science",
+      "text": "What kind of animal is a Komodo dragon?",
+      "options": ["Snake", "Lizard", "Crocodile", "Turtle"],
+      "correctIndex": 1,
+      "difficulty": "easy"
+    },
+    {
+      "id": "sci-010",
+      "categoryId": "science",
+      "text": "Which scientist developed the theory of general relativity?",
+      "options": ["Isaac Newton", "Albert Einstein", "Niels Bohr", "Galileo Galilei"],
+      "correctIndex": 1,
+      "difficulty": "easy"
+    },
+    {
+      "id": "sci-011",
+      "categoryId": "science",
+      "text": "What is the chemical formula for water?",
+      "options": ["CO2", "H2O", "NaCl", "O2"],
+      "correctIndex": 1,
+      "difficulty": "easy"
+    },
+    {
+      "id": "sci-012",
+      "categoryId": "science",
+      "text": "Which element is the most abundant in the Sun by volume?",
+      "options": ["Helium", "Hydrogen", "Oxygen", "Carbon"],
+      "correctIndex": 1,
+      "difficulty": "hard"
     },
     {
       "id": "his-001",
       "categoryId": "history",
       "text": "In which year did the Second World War end?",
       "options": ["1943", "1945", "1948", "1950"],
-      "correctIndex": 1
+      "correctIndex": 1,
+      "difficulty": "easy"
     },
     {
       "id": "his-002",
       "categoryId": "history",
       "text": "Who was the first president of the United States?",
       "options": ["Thomas Jefferson", "Abraham Lincoln", "George Washington", "John Adams"],
-      "correctIndex": 2
+      "correctIndex": 2,
+      "difficulty": "easy"
     },
     {
       "id": "his-003",
       "categoryId": "history",
       "text": "The Great Pyramids of Giza were built in which present-day country?",
       "options": ["Greece", "Egypt", "Mexico", "Iraq"],
-      "correctIndex": 1
+      "correctIndex": 1,
+      "difficulty": "easy"
     },
     {
       "id": "his-004",
       "categoryId": "history",
       "text": "Constantinople was the capital of which empire?",
       "options": ["Roman Republic", "Byzantine Empire", "Mongol Empire", "Persian Empire"],
-      "correctIndex": 1
+      "correctIndex": 1,
+      "difficulty": "medium"
     },
     {
       "id": "his-005",
       "categoryId": "history",
       "text": "In Europe, the movable-type printing press is most associated with whom?",
       "options": ["Johannes Gutenberg", "Leonardo da Vinci", "Galileo Galilei", "Isaac Newton"],
-      "correctIndex": 0
+      "correctIndex": 0,
+      "difficulty": "medium"
+    },
+    {
+      "id": "his-006",
+      "categoryId": "history",
+      "text": "In which year did the Berlin Wall fall?",
+      "options": ["1987", "1989", "1991", "1993"],
+      "correctIndex": 1,
+      "difficulty": "medium"
+    },
+    {
+      "id": "his-007",
+      "categoryId": "history",
+      "text": "Who was the primary author of the United States Declaration of Independence?",
+      "options": ["George Washington", "Thomas Jefferson", "Benjamin Franklin", "John Adams"],
+      "correctIndex": 1,
+      "difficulty": "medium"
+    },
+    {
+      "id": "his-008",
+      "categoryId": "history",
+      "text": "The Renaissance began in which present-day country?",
+      "options": ["France", "Italy", "Spain", "Germany"],
+      "correctIndex": 1,
+      "difficulty": "easy"
+    },
+    {
+      "id": "his-009",
+      "categoryId": "history",
+      "text": "Which ancient civilization built the city of Machu Picchu?",
+      "options": ["Aztec", "Maya", "Inca", "Olmec"],
+      "correctIndex": 2,
+      "difficulty": "medium"
+    },
+    {
+      "id": "his-010",
+      "categoryId": "history",
+      "text": "In which century did the French Revolution begin?",
+      "options": ["16th century", "17th century", "18th century", "19th century"],
+      "correctIndex": 2,
+      "difficulty": "medium"
+    },
+    {
+      "id": "his-011",
+      "categoryId": "history",
+      "text": "Who was the British Prime Minister for most of the Second World War?",
+      "options": ["Neville Chamberlain", "Winston Churchill", "Tony Blair", "Margaret Thatcher"],
+      "correctIndex": 1,
+      "difficulty": "easy"
+    },
+    {
+      "id": "his-012",
+      "categoryId": "history",
+      "text": "The historic Silk Road trade routes primarily connected which two regions?",
+      "options": ["Africa and Europe", "Asia and Europe", "North America and Asia", "Europe and Australia"],
+      "correctIndex": 1,
+      "difficulty": "hard"
     },
     {
       "id": "geo-001",
       "categoryId": "geography",
       "text": "On which continent is the Sahara Desert located?",
       "options": ["Asia", "Australia", "Africa", "South America"],
-      "correctIndex": 2
+      "correctIndex": 2,
+      "difficulty": "easy"
     },
     {
       "id": "geo-002",
       "categoryId": "geography",
       "text": "What is the capital city of Japan?",
       "options": ["Seoul", "Beijing", "Bangkok", "Tokyo"],
-      "correctIndex": 3
+      "correctIndex": 3,
+      "difficulty": "easy"
     },
     {
       "id": "geo-003",
       "categoryId": "geography",
       "text": "Which ocean is the largest by surface area?",
       "options": ["Atlantic", "Indian", "Arctic", "Pacific"],
-      "correctIndex": 3
+      "correctIndex": 3,
+      "difficulty": "easy"
     },
     {
       "id": "geo-004",
       "categoryId": "geography",
       "text": "Mount Everest sits on the border of Nepal and which other country?",
       "options": ["India", "China", "Bhutan", "Pakistan"],
-      "correctIndex": 1
+      "correctIndex": 1,
+      "difficulty": "medium"
     },
     {
       "id": "geo-005",
       "categoryId": "geography",
       "text": "Which two continents does the Bosphorus strait separate?",
       "options": ["Europe and Asia", "Africa and Asia", "Europe and Africa", "Asia and Oceania"],
-      "correctIndex": 0
+      "correctIndex": 0,
+      "difficulty": "hard"
+    },
+    {
+      "id": "geo-006",
+      "categoryId": "geography",
+      "text": "Which river is generally considered the longest in the world?",
+      "options": ["Amazon", "Nile", "Yangtze", "Mississippi"],
+      "correctIndex": 1,
+      "difficulty": "medium"
+    },
+    {
+      "id": "geo-007",
+      "categoryId": "geography",
+      "text": "Which is the smallest country in the world by land area?",
+      "options": ["Monaco", "Vatican City", "San Marino", "Liechtenstein"],
+      "correctIndex": 1,
+      "difficulty": "easy"
+    },
+    {
+      "id": "geo-008",
+      "categoryId": "geography",
+      "text": "Which country has the largest number of natural lakes in the world?",
+      "options": ["Canada", "Russia", "United States", "Finland"],
+      "correctIndex": 0,
+      "difficulty": "hard"
+    },
+    {
+      "id": "geo-009",
+      "categoryId": "geography",
+      "text": "What is the capital of Australia?",
+      "options": ["Sydney", "Melbourne", "Canberra", "Perth"],
+      "correctIndex": 2,
+      "difficulty": "medium"
+    },
+    {
+      "id": "geo-010",
+      "categoryId": "geography",
+      "text": "Which mountain range is traditionally considered the boundary between Europe and Asia?",
+      "options": ["Alps", "Ural Mountains", "Andes", "Himalayas"],
+      "correctIndex": 1,
+      "difficulty": "hard"
+    },
+    {
+      "id": "geo-011",
+      "categoryId": "geography",
+      "text": "The Amazon rainforest is located primarily in which country?",
+      "options": ["Peru", "Brazil", "Colombia", "Venezuela"],
+      "correctIndex": 1,
+      "difficulty": "easy"
+    },
+    {
+      "id": "geo-012",
+      "categoryId": "geography",
+      "text": "Which strait separates Europe from Africa at its narrowest point?",
+      "options": ["Strait of Hormuz", "Strait of Gibraltar", "Bosphorus", "Strait of Malacca"],
+      "correctIndex": 1,
+      "difficulty": "medium"
     }
   ]
 }
