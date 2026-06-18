@@ -16,7 +16,7 @@ T _$identity<T>(T value) => value;
 mixin _$Question {
 
  String get id; String get categoryId; String get text; List<String> get options;/// Local-only correct answer (0-based). Null in multiplayer.
- int? get correctIndex;
+ int? get correctIndex; QuestionDifficulty get difficulty;
 /// Create a copy of Question
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -29,16 +29,16 @@ $QuestionCopyWith<Question> get copyWith => _$QuestionCopyWithImpl<Question>(thi
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Question&&(identical(other.id, id) || other.id == id)&&(identical(other.categoryId, categoryId) || other.categoryId == categoryId)&&(identical(other.text, text) || other.text == text)&&const DeepCollectionEquality().equals(other.options, options)&&(identical(other.correctIndex, correctIndex) || other.correctIndex == correctIndex));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Question&&(identical(other.id, id) || other.id == id)&&(identical(other.categoryId, categoryId) || other.categoryId == categoryId)&&(identical(other.text, text) || other.text == text)&&const DeepCollectionEquality().equals(other.options, options)&&(identical(other.correctIndex, correctIndex) || other.correctIndex == correctIndex)&&(identical(other.difficulty, difficulty) || other.difficulty == difficulty));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,categoryId,text,const DeepCollectionEquality().hash(options),correctIndex);
+int get hashCode => Object.hash(runtimeType,id,categoryId,text,const DeepCollectionEquality().hash(options),correctIndex,difficulty);
 
 @override
 String toString() {
-  return 'Question(id: $id, categoryId: $categoryId, text: $text, options: $options, correctIndex: $correctIndex)';
+  return 'Question(id: $id, categoryId: $categoryId, text: $text, options: $options, correctIndex: $correctIndex, difficulty: $difficulty)';
 }
 
 
@@ -49,7 +49,7 @@ abstract mixin class $QuestionCopyWith<$Res>  {
   factory $QuestionCopyWith(Question value, $Res Function(Question) _then) = _$QuestionCopyWithImpl;
 @useResult
 $Res call({
- String id, String categoryId, String text, List<String> options, int? correctIndex
+ String id, String categoryId, String text, List<String> options, int? correctIndex, QuestionDifficulty difficulty
 });
 
 
@@ -66,14 +66,15 @@ class _$QuestionCopyWithImpl<$Res>
 
 /// Create a copy of Question
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? categoryId = null,Object? text = null,Object? options = null,Object? correctIndex = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? categoryId = null,Object? text = null,Object? options = null,Object? correctIndex = freezed,Object? difficulty = null,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,categoryId: null == categoryId ? _self.categoryId : categoryId // ignore: cast_nullable_to_non_nullable
 as String,text: null == text ? _self.text : text // ignore: cast_nullable_to_non_nullable
 as String,options: null == options ? _self.options : options // ignore: cast_nullable_to_non_nullable
 as List<String>,correctIndex: freezed == correctIndex ? _self.correctIndex : correctIndex // ignore: cast_nullable_to_non_nullable
-as int?,
+as int?,difficulty: null == difficulty ? _self.difficulty : difficulty // ignore: cast_nullable_to_non_nullable
+as QuestionDifficulty,
   ));
 }
 
@@ -158,10 +159,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String categoryId,  String text,  List<String> options,  int? correctIndex)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String categoryId,  String text,  List<String> options,  int? correctIndex,  QuestionDifficulty difficulty)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Question() when $default != null:
-return $default(_that.id,_that.categoryId,_that.text,_that.options,_that.correctIndex);case _:
+return $default(_that.id,_that.categoryId,_that.text,_that.options,_that.correctIndex,_that.difficulty);case _:
   return orElse();
 
 }
@@ -179,10 +180,10 @@ return $default(_that.id,_that.categoryId,_that.text,_that.options,_that.correct
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String categoryId,  String text,  List<String> options,  int? correctIndex)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String categoryId,  String text,  List<String> options,  int? correctIndex,  QuestionDifficulty difficulty)  $default,) {final _that = this;
 switch (_that) {
 case _Question():
-return $default(_that.id,_that.categoryId,_that.text,_that.options,_that.correctIndex);case _:
+return $default(_that.id,_that.categoryId,_that.text,_that.options,_that.correctIndex,_that.difficulty);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -199,10 +200,10 @@ return $default(_that.id,_that.categoryId,_that.text,_that.options,_that.correct
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String categoryId,  String text,  List<String> options,  int? correctIndex)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String categoryId,  String text,  List<String> options,  int? correctIndex,  QuestionDifficulty difficulty)?  $default,) {final _that = this;
 switch (_that) {
 case _Question() when $default != null:
-return $default(_that.id,_that.categoryId,_that.text,_that.options,_that.correctIndex);case _:
+return $default(_that.id,_that.categoryId,_that.text,_that.options,_that.correctIndex,_that.difficulty);case _:
   return null;
 
 }
@@ -214,7 +215,7 @@ return $default(_that.id,_that.categoryId,_that.text,_that.options,_that.correct
 @JsonSerializable()
 
 class _Question implements Question {
-  const _Question({required this.id, required this.categoryId, required this.text, required final  List<String> options, this.correctIndex}): _options = options;
+  const _Question({required this.id, required this.categoryId, required this.text, required final  List<String> options, this.correctIndex, this.difficulty = QuestionDifficulty.medium}): _options = options;
   factory _Question.fromJson(Map<String, dynamic> json) => _$QuestionFromJson(json);
 
 @override final  String id;
@@ -229,6 +230,7 @@ class _Question implements Question {
 
 /// Local-only correct answer (0-based). Null in multiplayer.
 @override final  int? correctIndex;
+@override@JsonKey() final  QuestionDifficulty difficulty;
 
 /// Create a copy of Question
 /// with the given fields replaced by the non-null parameter values.
@@ -243,16 +245,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Question&&(identical(other.id, id) || other.id == id)&&(identical(other.categoryId, categoryId) || other.categoryId == categoryId)&&(identical(other.text, text) || other.text == text)&&const DeepCollectionEquality().equals(other._options, _options)&&(identical(other.correctIndex, correctIndex) || other.correctIndex == correctIndex));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Question&&(identical(other.id, id) || other.id == id)&&(identical(other.categoryId, categoryId) || other.categoryId == categoryId)&&(identical(other.text, text) || other.text == text)&&const DeepCollectionEquality().equals(other._options, _options)&&(identical(other.correctIndex, correctIndex) || other.correctIndex == correctIndex)&&(identical(other.difficulty, difficulty) || other.difficulty == difficulty));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,categoryId,text,const DeepCollectionEquality().hash(_options),correctIndex);
+int get hashCode => Object.hash(runtimeType,id,categoryId,text,const DeepCollectionEquality().hash(_options),correctIndex,difficulty);
 
 @override
 String toString() {
-  return 'Question(id: $id, categoryId: $categoryId, text: $text, options: $options, correctIndex: $correctIndex)';
+  return 'Question(id: $id, categoryId: $categoryId, text: $text, options: $options, correctIndex: $correctIndex, difficulty: $difficulty)';
 }
 
 
@@ -263,7 +265,7 @@ abstract mixin class _$QuestionCopyWith<$Res> implements $QuestionCopyWith<$Res>
   factory _$QuestionCopyWith(_Question value, $Res Function(_Question) _then) = __$QuestionCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String categoryId, String text, List<String> options, int? correctIndex
+ String id, String categoryId, String text, List<String> options, int? correctIndex, QuestionDifficulty difficulty
 });
 
 
@@ -280,14 +282,15 @@ class __$QuestionCopyWithImpl<$Res>
 
 /// Create a copy of Question
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? categoryId = null,Object? text = null,Object? options = null,Object? correctIndex = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? categoryId = null,Object? text = null,Object? options = null,Object? correctIndex = freezed,Object? difficulty = null,}) {
   return _then(_Question(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,categoryId: null == categoryId ? _self.categoryId : categoryId // ignore: cast_nullable_to_non_nullable
 as String,text: null == text ? _self.text : text // ignore: cast_nullable_to_non_nullable
 as String,options: null == options ? _self._options : options // ignore: cast_nullable_to_non_nullable
 as List<String>,correctIndex: freezed == correctIndex ? _self.correctIndex : correctIndex // ignore: cast_nullable_to_non_nullable
-as int?,
+as int?,difficulty: null == difficulty ? _self.difficulty : difficulty // ignore: cast_nullable_to_non_nullable
+as QuestionDifficulty,
   ));
 }
 

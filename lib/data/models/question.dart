@@ -1,5 +1,7 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
+import 'question_difficulty.dart';
+
 part 'question.freezed.dart';
 part 'question.g.dart';
 
@@ -22,6 +24,8 @@ abstract class Question with _$Question {
 
     /// Local-only correct answer (0-based). Null in multiplayer.
     int? correctIndex,
+
+    @Default(QuestionDifficulty.medium) QuestionDifficulty difficulty,
   }) = _Question;
 
   factory Question.fromJson(Map<String, dynamic> json) =>
