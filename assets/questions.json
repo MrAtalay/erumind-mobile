@@ -1,0 +1,129 @@
+{
+  "categories": [
+    {
+      "id": "science",
+      "name": "Science",
+      "colorValue": 4286470082,
+      "description": "Biology, chemistry, physics and the natural world."
+    },
+    {
+      "id": "history",
+      "name": "History",
+      "colorValue": 4294278144,
+      "description": "People, events and civilizations of the past."
+    },
+    {
+      "id": "geography",
+      "name": "Geography",
+      "colorValue": 4278225275,
+      "description": "Countries, capitals, oceans and landmarks."
+    }
+  ],
+  "questions": [
+    {
+      "id": "sci-001",
+      "categoryId": "science",
+      "text": "Which gas do plants mainly take in from the air for photosynthesis?",
+      "options": ["Oxygen", "Carbon dioxide", "Nitrogen", "Hydrogen"],
+      "correctIndex": 1
+    },
+    {
+      "id": "sci-002",
+      "categoryId": "science",
+      "text": "What is the chemical symbol for the element sodium?",
+      "options": ["So", "Sd", "Na", "Sn"],
+      "correctIndex": 2
+    },
+    {
+      "id": "sci-003",
+      "categoryId": "science",
+      "text": "Roughly how many bones are in the adult human body?",
+      "options": ["206", "186", "226", "246"],
+      "correctIndex": 0
+    },
+    {
+      "id": "sci-004",
+      "categoryId": "science",
+      "text": "Which part of a cell is often called its powerhouse?",
+      "options": ["Nucleus", "Ribosome", "Mitochondrion", "Vacuole"],
+      "correctIndex": 2
+    },
+    {
+      "id": "sci-005",
+      "categoryId": "science",
+      "text": "What is the closest planet to the Sun?",
+      "options": ["Venus", "Mercury", "Mars", "Earth"],
+      "correctIndex": 1
+    },
+    {
+      "id": "his-001",
+      "categoryId": "history",
+      "text": "In which year did the Second World War end?",
+      "options": ["1943", "1945", "1948", "1950"],
+      "correctIndex": 1
+    },
+    {
+      "id": "his-002",
+      "categoryId": "history",
+      "text": "Who was the first president of the United States?",
+      "options": ["Thomas Jefferson", "Abraham Lincoln", "George Washington", "John Adams"],
+      "correctIndex": 2
+    },
+    {
+      "id": "his-003",
+      "categoryId": "history",
+      "text": "The Great Pyramids of Giza were built in which present-day country?",
+      "options": ["Greece", "Egypt", "Mexico", "Iraq"],
+      "correctIndex": 1
+    },
+    {
+      "id": "his-004",
+      "categoryId": "history",
+      "text": "Constantinople was the capital of which empire?",
+      "options": ["Roman Republic", "Byzantine Empire", "Mongol Empire", "Persian Empire"],
+      "correctIndex": 1
+    },
+    {
+      "id": "his-005",
+      "categoryId": "history",
+      "text": "In Europe, the movable-type printing press is most associated with whom?",
+      "options": ["Johannes Gutenberg", "Leonardo da Vinci", "Galileo Galilei", "Isaac Newton"],
+      "correctIndex": 0
+    },
+    {
+      "id": "geo-001",
+      "categoryId": "geography",
+      "text": "On which continent is the Sahara Desert located?",
+      "options": ["Asia", "Australia", "Africa", "South America"],
+      "correctIndex": 2
+    },
+    {
+      "id": "geo-002",
+      "categoryId": "geography",
+      "text": "What is the capital city of Japan?",
+      "options": ["Seoul", "Beijing", "Bangkok", "Tokyo"],
+      "correctIndex": 3
+    },
+    {
+      "id": "geo-003",
+      "categoryId": "geography",
+      "text": "Which ocean is the largest by surface area?",
+      "options": ["Atlantic", "Indian", "Arctic", "Pacific"],
+      "correctIndex": 3
+    },
+    {
+      "id": "geo-004",
+      "categoryId": "geography",
+      "text": "Mount Everest sits on the border of Nepal and which other country?",
+      "options": ["India", "China", "Bhutan", "Pakistan"],
+      "correctIndex": 1
+    },
+    {
+      "id": "geo-005",
+      "categoryId": "geography",
+      "text": "Which two continents does the Bosphorus strait separate?",
+      "options": ["Europe and Asia", "Africa and Asia", "Europe and Africa", "Asia and Oceania"],
+      "correctIndex": 0
+    }
+  ]
+}
