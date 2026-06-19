@@ -14,6 +14,8 @@ class GameState {
     this.selectedIndex,
     this.lastResult,
     this.isFinished = false,
+    this.bestScore = 0,
+    this.isNewBest = false,
   });
 
   /// The questions for this round, already ordered.
@@ -33,6 +35,12 @@ class GameState {
 
   /// True once the round is over (results screen).
   final bool isFinished;
+
+  /// Persisted best score, populated when the round finishes. 0 otherwise.
+  final int bestScore;
+
+  /// True when this round set a new best score (for a "New best!" badge).
+  final bool isNewBest;
 
   Question get currentQuestion => questions[currentIndex];
 

@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../data/repositories/local_question_repository.dart';
 import '../../../data/repositories/question_repository.dart';
+import '../../../services/storage_service.dart';
 import 'game_state.dart';
 
 /// Provides the active [QuestionRepository] implementation.
@@ -22,6 +23,7 @@ class GameController extends AsyncNotifier<GameState> {
   static const int questionsPerRound = 10;
 
   QuestionRepository get _repo => ref.read(questionRepositoryProvider);
+  StorageService get _storage => ref.read(storageServiceProvider);
 
   @override
   Future<GameState> build() => _newRound();
@@ -53,16 +55,21 @@ class GameController extends AsyncNotifier<GameState> {
   }
 
   /// Move to the next question, or finish the round on the last one.
-  void next() {
+  Future<void> next() async {
     final current = state.value;
     if (current == null || !current.isAnswered) return;
 
     if (current.isLastQuestion) {
+      // Persist the result before showing the summary so the results screen
+      // reads a settled best score (no race with the async write).
+      final isNewBest = await _storage.recordRound(current.score);
       state = AsyncData(GameState(
         questions: current.questions,
         currentIndex: current.currentIndex,
         score: current.score,
         isFinished: true,
+        bestScore: _storage.bestScore,
+        isNewBest: isNewBest,
       ));
       return;
     }

@@ -174,6 +174,19 @@ class _ResultsView extends ConsumerWidget {
               'You scored ${state.score} / ${state.total}',
               style: theme.textTheme.titleLarge,
             ),
+            const SizedBox(height: 8),
+            Text(
+              'Best: ${state.bestScore} / ${state.total}',
+              style: theme.textTheme.titleMedium,
+            ),
+            if (state.isNewBest) ...[
+              const SizedBox(height: 12),
+              Chip(
+                avatar: const Icon(Icons.emoji_events, size: 18),
+                label: const Text('New best!'),
+                backgroundColor: Colors.amber.shade100,
+              ),
+            ],
             const SizedBox(height: 32),
             FilledButton(
               onPressed: controller.restart,

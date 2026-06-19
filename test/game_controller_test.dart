@@ -3,8 +3,11 @@ import 'package:erumind/data/models/category.dart';
 import 'package:erumind/data/models/question.dart';
 import 'package:erumind/data/repositories/question_repository.dart';
 import 'package:erumind/features/game/logic/game_controller.dart';
+import 'package:erumind/services/storage_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import 'support/test_storage.dart';
 
 /// Fake repository with deterministic, local validation for scoring tests.
 class _FakeRepo implements QuestionRepository {
@@ -43,9 +46,11 @@ List<Question> _makeQuestions(int n) => [
         ),
     ];
 
-ProviderContainer _container(List<Question> questions) {
+Future<ProviderContainer> _container(List<Question> questions) async {
+  final storage = await setUpTempStorage();
   final container = ProviderContainer(overrides: [
     questionRepositoryProvider.overrideWithValue(_FakeRepo(questions)),
+    storageServiceProvider.overrideWithValue(storage),
   ]);
   addTearDown(container.dispose);
   return container;
@@ -53,13 +58,13 @@ ProviderContainer _container(List<Question> questions) {
 
 void main() {
   test('a round is capped at questionsPerRound', () async {
-    final container = _container(_makeQuestions(25));
+    final container = await _container(_makeQuestions(25));
     final state = await container.read(gameControllerProvider.future);
     expect(state.total, GameController.questionsPerRound);
   });
 
   test('answering every question correctly scores full marks', () async {
-    final container = _container(_makeQuestions(5));
+    final container = await _container(_makeQuestions(5));
     await container.read(gameControllerProvider.future);
     final controller = container.read(gameControllerProvider.notifier);
 
@@ -67,7 +72,7 @@ void main() {
       final state = container.read(gameControllerProvider).requireValue;
       if (state.isFinished) break;
       await controller.answer(state.currentQuestion.correctIndex!);
-      controller.next();
+      await controller.next();
     }
 
     final finished = container.read(gameControllerProvider).requireValue;
@@ -76,7 +81,7 @@ void main() {
   });
 
   test('answering every question wrong scores zero', () async {
-    final container = _container(_makeQuestions(5));
+    final container = await _container(_makeQuestions(5));
     await container.read(gameControllerProvider.future);
     final controller = container.read(gameControllerProvider.notifier);
 
@@ -85,7 +90,7 @@ void main() {
       if (state.isFinished) break;
       final wrong = (state.currentQuestion.correctIndex! + 1) % 4;
       await controller.answer(wrong);
-      controller.next();
+      await controller.next();
     }
 
     final finished = container.read(gameControllerProvider).requireValue;
@@ -93,7 +98,7 @@ void main() {
   });
 
   test('a second answer on the same question is ignored', () async {
-    final container = _container(_makeQuestions(3));
+    final container = await _container(_makeQuestions(3));
     await container.read(gameControllerProvider.future);
     final controller = container.read(gameControllerProvider.notifier);
 
@@ -105,5 +110,23 @@ void main() {
     final after = container.read(gameControllerProvider).requireValue;
     expect(after.score, 1);
     expect(after.selectedIndex, correct);
+  });
+
+  test('finishing a round records the score as a new best', () async {
+    final container = await _container(_makeQuestions(3));
+    await container.read(gameControllerProvider.future);
+    final controller = container.read(gameControllerProvider.notifier);
+
+    while (true) {
+      final state = container.read(gameControllerProvider).requireValue;
+      if (state.isFinished) break;
+      await controller.answer(state.currentQuestion.correctIndex!);
+      await controller.next();
+    }
+
+    final finished = container.read(gameControllerProvider).requireValue;
+    expect(finished.score, 3);
+    expect(finished.bestScore, 3);
+    expect(finished.isNewBest, isTrue);
   });
 }
