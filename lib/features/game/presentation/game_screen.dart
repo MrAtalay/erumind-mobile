@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../l10n/app_localizations.dart';
 import '../../lives/logic/lives_controller.dart';
 import '../logic/game_controller.dart';
 import '../logic/game_state.dart';
@@ -63,17 +64,18 @@ class _LobbyView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Ready to play?', style: theme.textTheme.headlineMedium),
+            Text(l10n.lobbyReady, style: theme.textTheme.headlineMedium),
             const SizedBox(height: 24),
             const _HeartsRow(),
             const SizedBox(height: 32),
-            const _PlayButton(label: 'Play'),
+            _PlayButton(label: l10n.play),
           ],
         ),
       ),
@@ -117,6 +119,7 @@ class _PlayButton extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final lives = ref.watch(livesControllerProvider);
+    final l10n = AppLocalizations.of(context)!;
 
     if (lives.canPlay) {
       return FilledButton(
@@ -139,9 +142,9 @@ class _PlayButton extends ConsumerWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const FilledButton(onPressed: null, child: Text('Out of lives')),
+        FilledButton(onPressed: null, child: Text(l10n.outOfLives)),
         const SizedBox(height: 12),
-        Text('Next life in ${_formatDuration(remaining)}',
+        Text(l10n.nextLifeIn(_formatDuration(remaining)),
             style: Theme.of(context).textTheme.titleMedium),
       ],
     );
@@ -165,6 +168,7 @@ class _QuestionView extends ConsumerWidget {
     final controller = ref.read(gameControllerProvider.notifier);
     final question = state.currentQuestion;
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
 
     return Padding(
       padding: const EdgeInsets.all(20),
@@ -175,9 +179,9 @@ class _QuestionView extends ConsumerWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Question ${state.questionNumber} / ${state.total}',
+              Text(l10n.questionProgress(state.questionNumber, state.total),
                   style: theme.textTheme.titleMedium),
-              Text('Score: ${state.score}',
+              Text(l10n.score(state.score),
                   style: theme.textTheme.titleMedium),
             ],
           ),
@@ -211,7 +215,7 @@ class _QuestionView extends ConsumerWidget {
           if (state.isAnswered)
             FilledButton(
               onPressed: controller.next,
-              child: Text(state.isLastQuestion ? 'See results' : 'Next'),
+              child: Text(state.isLastQuestion ? l10n.seeResults : l10n.next),
             ),
         ],
       ),
@@ -284,6 +288,7 @@ class _ResultsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
 
     return Center(
       child: Padding(
@@ -291,32 +296,32 @@ class _ResultsView extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Round complete!', style: theme.textTheme.headlineMedium),
+            Text(l10n.roundComplete, style: theme.textTheme.headlineMedium),
             const SizedBox(height: 16),
             Text(
-              '${state.score} points',
+              l10n.points(state.score),
               style: theme.textTheme.headlineSmall,
             ),
             const SizedBox(height: 4),
             Text(
-              'Correct: ${state.correctCount} / ${state.total}',
+              l10n.correctOutOf(state.correctCount, state.total),
               style: theme.textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
             Text(
-              'Best: ${state.bestScore} points',
+              l10n.bestPoints(state.bestScore),
               style: theme.textTheme.titleMedium,
             ),
             if (state.isNewBest) ...[
               const SizedBox(height: 12),
               Chip(
                 avatar: const Icon(Icons.emoji_events, size: 18),
-                label: const Text('New best!'),
+                label: Text(l10n.newBest),
                 backgroundColor: Colors.amber.shade100,
               ),
             ],
             const SizedBox(height: 32),
-            const _PlayButton(label: 'Play again'),
+            _PlayButton(label: l10n.playAgain),
           ],
         ),
       ),

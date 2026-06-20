@@ -1,0 +1,27 @@
+{
+  "@@locale": "tr",
+
+  "play": "Oyna",
+  "playAgain": "Tekrar oyna",
+  "settings": "Ayarlar",
+  "menuNoGames": "Henüz oyun yok",
+  "bestPoints": "En iyi: {points} puan",
+
+  "settingsLanguage": "Dil",
+  "languageEnglish": "English",
+  "languageTurkish": "Türkçe",
+
+  "lobbyReady": "Oynamaya hazır mısın?",
+  "outOfLives": "Can kalmadı",
+  "nextLifeIn": "Sonraki can: {time}",
+
+  "questionProgress": "Soru {current} / {total}",
+  "score": "Puan: {score}",
+  "next": "Sonraki",
+  "seeResults": "Sonuçlar",
+
+  "roundComplete": "Tur bitti!",
+  "points": "{points} puan",
+  "correctOutOf": "Doğru: {correct} / {total}",
+  "newBest": "Yeni rekor!"
+}

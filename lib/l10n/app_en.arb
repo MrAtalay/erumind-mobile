@@ -1,0 +1,45 @@
+{
+  "@@locale": "en",
+
+  "play": "Play",
+  "playAgain": "Play again",
+  "settings": "Settings",
+  "menuNoGames": "No games yet",
+  "bestPoints": "Best: {points} points",
+  "@bestPoints": {
+    "placeholders": { "points": { "type": "int" } }
+  },
+
+  "settingsLanguage": "Language",
+  "languageEnglish": "English",
+  "languageTurkish": "Türkçe",
+
+  "lobbyReady": "Ready to play?",
+  "outOfLives": "Out of lives",
+  "nextLifeIn": "Next life in {time}",
+  "@nextLifeIn": {
+    "placeholders": { "time": { "type": "String" } }
+  },
+
+  "questionProgress": "Question {current} / {total}",
+  "@questionProgress": {
+    "placeholders": { "current": { "type": "int" }, "total": { "type": "int" } }
+  },
+  "score": "Score: {score}",
+  "@score": {
+    "placeholders": { "score": { "type": "int" } }
+  },
+  "next": "Next",
+  "seeResults": "See results",
+
+  "roundComplete": "Round complete!",
+  "points": "{points} points",
+  "@points": {
+    "placeholders": { "points": { "type": "int" } }
+  },
+  "correctOutOf": "Correct: {correct} / {total}",
+  "@correctOutOf": {
+    "placeholders": { "correct": { "type": "int" }, "total": { "type": "int" } }
+  },
+  "newBest": "New best!"
+}

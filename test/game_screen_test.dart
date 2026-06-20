@@ -6,6 +6,7 @@ import 'package:erumind/data/models/question.dart';
 import 'package:erumind/data/repositories/question_repository.dart';
 import 'package:erumind/features/game/logic/game_controller.dart';
 import 'package:erumind/features/game/presentation/game_screen.dart';
+import 'package:erumind/l10n/app_localizations.dart';
 import 'package:erumind/services/storage_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -50,7 +51,11 @@ void main() {
           questionRepositoryProvider.overrideWithValue(_FakeRepo()),
           storageServiceProvider.overrideWithValue(storage),
         ],
-        child: const MaterialApp(home: GameScreen()),
+        child: const MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: GameScreen(),
+        ),
       );
 
   testWidgets('opens on the lives-gated lobby', (tester) async {

@@ -14,6 +14,7 @@ abstract class StorageService {
   static const String _gamesPlayedKey = 'games_played';
   static const String _livesKey = 'lives';
   static const String _refillAnchorKey = 'lives_refill_anchor_ms';
+  static const String _localeKey = 'locale_code';
 
   @protected
   Object? readValue(String key);
@@ -63,6 +64,18 @@ abstract class StorageService {
       await deleteValue(_refillAnchorKey);
     } else {
       await writeValue(_refillAnchorKey, anchor.millisecondsSinceEpoch);
+    }
+  }
+
+  /// Selected UI language code (e.g. 'en', 'tr'), or null to follow the device.
+  String? get localeCode => readValue(_localeKey) as String?;
+
+  /// Persists the language code, or clears it (null) to follow the device.
+  Future<void> saveLocaleCode(String? code) async {
+    if (code == null) {
+      await deleteValue(_localeKey);
+    } else {
+      await writeValue(_localeKey, code);
     }
   }
 }

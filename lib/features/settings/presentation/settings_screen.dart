@@ -1,25 +1,49 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Settings screen.
-///
-/// Skeleton for Phase 4: sound on/off and language (TR/EN) land in the next
-/// slice (they need a persistence-backed settings controller, and the language
-/// switch needs a localization decision).
-class SettingsScreen extends StatelessWidget {
+import '../../../l10n/app_localizations.dart';
+import '../logic/settings_controller.dart';
+
+/// Settings screen. Phase 4 slice 2: UI language (TR/EN). Sound lands with the
+/// audio slice.
+class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
+    final selected = ref.watch(settingsControllerProvider)?.languageCode;
+    final controller = ref.read(settingsControllerProvider.notifier);
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
-      body: const Center(
-        child: Padding(
-          padding: EdgeInsets.all(24),
-          child: Text(
-            'Sound and language settings are coming soon.',
-            textAlign: TextAlign.center,
+      appBar: AppBar(title: Text(l10n.settings)),
+      body: ListView(
+        children: [
+          ListTile(
+            title: Text(
+              l10n.settingsLanguage,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
           ),
-        ),
+          RadioGroup<String>(
+            groupValue: selected,
+            onChanged: (code) {
+              if (code != null) controller.setLocale(Locale(code));
+            },
+            child: Column(
+              children: [
+                RadioListTile<String>(
+                  title: Text(l10n.languageEnglish),
+                  value: 'en',
+                ),
+                RadioListTile<String>(
+                  title: Text(l10n.languageTurkish),
+                  value: 'tr',
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
