@@ -85,6 +85,18 @@ lib/
 - Phase 6 — Firebase foundation + server-side validation.
 - Phase 7 — Async duello + leaderboard. Phase 8 — AdMob + IAP.
 
+## 6b. Lessons & pitfalls (read before persistence/services/widget tests)
+See **`docs/lessons-and-pitfalls.md`** for the full log. The expensive ones so far:
+- **New persistence/service → interface + in-memory fake from the start** (same
+  seam as `QuestionRepository`). The game core depends only on the interface.
+- **Never let real I/O reach a `testWidgets` body** — the fake-async zone never
+  completes real-I/O Futures, so `pumpAndSettle` hangs to a 10-min timeout. Use an
+  in-memory test double; or open I/O in `setUp()`; or wrap it in `tester.runAsync`.
+- **Indeterminate spinners / `Stream.periodic` tickers also hang `pumpAndSettle`**
+  — use bounded `pump(Duration)` instead, and keep tickers `autoDispose`.
+- **Localize hangs with a single test file + `pump()` probes;** don't sit through
+  the 10-min timeout. Don't reuse log filenames across concurrent runs.
+
 ## 7. Coding conventions
 - Riverpod for app state; avoid `setState` beyond trivial local state.
 - Immutable domain models via freezed; JSON via json_serializable. Short-lived UI state may be
