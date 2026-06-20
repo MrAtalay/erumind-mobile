@@ -3,6 +3,7 @@ import 'package:erumind/data/models/category.dart';
 import 'package:erumind/data/models/question.dart';
 import 'package:erumind/data/repositories/question_repository.dart';
 import 'package:erumind/features/game/logic/game_controller.dart';
+import 'package:erumind/features/lives/logic/lives_controller.dart';
 import 'package:erumind/services/storage_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -59,7 +60,11 @@ Future<ProviderContainer> _container(List<Question> questions) async {
 void main() {
   test('a round is capped at questionsPerRound', () async {
     final container = await _container(_makeQuestions(25));
-    final state = await container.read(gameControllerProvider.future);
+    await container.read(gameControllerProvider.future); // lobby
+    final controller = container.read(gameControllerProvider.notifier);
+    await controller.start();
+
+    final state = container.read(gameControllerProvider).requireValue;
     expect(state.total, GameController.questionsPerRound);
   });
 
@@ -67,6 +72,7 @@ void main() {
     final container = await _container(_makeQuestions(5));
     await container.read(gameControllerProvider.future);
     final controller = container.read(gameControllerProvider.notifier);
+    await controller.start();
 
     while (true) {
       final state = container.read(gameControllerProvider).requireValue;
@@ -84,6 +90,7 @@ void main() {
     final container = await _container(_makeQuestions(5));
     await container.read(gameControllerProvider.future);
     final controller = container.read(gameControllerProvider.notifier);
+    await controller.start();
 
     while (true) {
       final state = container.read(gameControllerProvider).requireValue;
@@ -101,6 +108,7 @@ void main() {
     final container = await _container(_makeQuestions(3));
     await container.read(gameControllerProvider.future);
     final controller = container.read(gameControllerProvider.notifier);
+    await controller.start();
 
     final current = container.read(gameControllerProvider).requireValue;
     final correct = current.currentQuestion.correctIndex!;
@@ -116,6 +124,7 @@ void main() {
     final container = await _container(_makeQuestions(3));
     await container.read(gameControllerProvider.future);
     final controller = container.read(gameControllerProvider.notifier);
+    await controller.start();
 
     while (true) {
       final state = container.read(gameControllerProvider).requireValue;
@@ -128,5 +137,20 @@ void main() {
     expect(finished.score, 3);
     expect(finished.bestScore, 3);
     expect(finished.isNewBest, isTrue);
+  });
+
+  test('starting spends a life and is blocked when out of lives', () async {
+    final container = await _container(_makeQuestions(5));
+    await container.read(gameControllerProvider.future);
+    final controller = container.read(gameControllerProvider.notifier);
+    final maxLives = container.read(livesControllerProvider).max;
+
+    for (var i = 0; i < maxLives; i++) {
+      expect(await controller.start(), isTrue);
+    }
+    expect(container.read(livesControllerProvider).lives, 0);
+
+    // No lives left: start is refused and the previous round is left intact.
+    expect(await controller.start(), isFalse);
   });
 }

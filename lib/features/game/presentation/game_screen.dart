@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../lives/logic/lives_controller.dart';
 import '../logic/game_controller.dart';
 import '../logic/game_state.dart';
 
-/// The Phase 1 vertical slice: one question, four options, feedback, score.
-///
-/// No menu, no wheel yet — just enough to prove the core loop is fun and
-/// runnable. A [ConsumerWidget] can read Riverpod providers via [ref].
+/// The single-player game screen: a lives-gated lobby, an active round, and an
+/// end-of-round summary. No menu or wheel yet — just the core loop.
 class GameScreen extends ConsumerWidget {
   const GameScreen({super.key});
 
@@ -16,18 +15,143 @@ class GameScreen extends ConsumerWidget {
     final gameAsync = ref.watch(gameControllerProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('EruMind')),
+      appBar: AppBar(
+        title: const Text('EruMind'),
+        actions: const [
+          Padding(padding: EdgeInsets.only(right: 16), child: _LivesBadge()),
+        ],
+      ),
       body: SafeArea(
         child: gameAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (err, _) => Center(child: Text('Something went wrong:\n$err')),
-          data: (state) => state.isFinished
-              ? _ResultsView(state: state)
-              : _QuestionView(state: state),
+          data: (state) => switch (state.phase) {
+            GamePhase.lobby => const _LobbyView(),
+            GamePhase.playing => _QuestionView(state: state),
+            GamePhase.finished => _ResultsView(state: state),
+          },
         ),
       ),
     );
   }
+}
+
+/// Compact lives count for the app bar, e.g. ♥ 4.
+class _LivesBadge extends ConsumerWidget {
+  const _LivesBadge();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final lives = ref.watch(livesControllerProvider);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Icon(Icons.favorite, color: Colors.red, size: 20),
+        const SizedBox(width: 4),
+        Text('${lives.lives}',
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+      ],
+    );
+  }
+}
+
+/// The pre-round gate: shows hearts and a Play button (or a countdown when out
+/// of lives).
+class _LobbyView extends StatelessWidget {
+  const _LobbyView();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Ready to play?', style: theme.textTheme.headlineMedium),
+            const SizedBox(height: 24),
+            const _HeartsRow(),
+            const SizedBox(height: 32),
+            const _PlayButton(label: 'Play'),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// A full row of hearts: filled for current lives, outlined for the rest.
+class _HeartsRow extends ConsumerWidget {
+  const _HeartsRow();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final lives = ref.watch(livesControllerProvider);
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        for (var i = 0; i < lives.max; i++)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Icon(
+              i < lives.lives ? Icons.favorite : Icons.favorite_border,
+              color: Colors.red,
+              size: 32,
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+/// Lives-gated play control shared by the lobby and the results screen.
+///
+/// When a life is available it starts a round; otherwise it disables itself and
+/// shows a live countdown to the next life.
+class _PlayButton extends ConsumerWidget {
+  const _PlayButton({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final lives = ref.watch(livesControllerProvider);
+
+    if (lives.canPlay) {
+      return FilledButton(
+        onPressed: () => ref.read(gameControllerProvider.notifier).start(),
+        child: Text(label),
+      );
+    }
+
+    // Out of lives: tick once a second to update the countdown, and re-apply
+    // regeneration so the button re-enables the moment a life is earned.
+    ref.listen(tickerProvider, (_, _) {
+      ref.read(livesControllerProvider.notifier).refresh();
+    });
+    ref.watch(tickerProvider);
+
+    final interval = ref.read(livesConfigProvider).refillInterval;
+    final remaining =
+        lives.timeUntilNext(ref.read(clockProvider)(), interval) ?? Duration.zero;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const FilledButton(onPressed: null, child: Text('Out of lives')),
+        const SizedBox(height: 12),
+        Text('Next life in ${_formatDuration(remaining)}',
+            style: Theme.of(context).textTheme.titleMedium),
+      ],
+    );
+  }
+}
+
+String _formatDuration(Duration d) {
+  final minutes = d.inMinutes.remainder(60).toString().padLeft(2, '0');
+  final seconds = d.inSeconds.remainder(60).toString().padLeft(2, '0');
+  return d.inHours > 0 ? '${d.inHours}:$minutes:$seconds' : '$minutes:$seconds';
 }
 
 /// Shows the current question, the four options, and post-answer feedback.
@@ -151,16 +275,15 @@ class _OptionTile extends StatelessWidget {
   }
 }
 
-/// End-of-round summary with a play-again button.
-class _ResultsView extends ConsumerWidget {
+/// End-of-round summary with a lives-gated play-again button.
+class _ResultsView extends StatelessWidget {
   const _ResultsView({required this.state});
 
   final GameState state;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final controller = ref.read(gameControllerProvider.notifier);
 
     return Center(
       child: Padding(
@@ -188,10 +311,7 @@ class _ResultsView extends ConsumerWidget {
               ),
             ],
             const SizedBox(height: 32),
-            FilledButton(
-              onPressed: controller.restart,
-              child: const Text('Play again'),
-            ),
+            const _PlayButton(label: 'Play again'),
           ],
         ),
       ),

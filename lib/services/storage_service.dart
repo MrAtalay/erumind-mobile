@@ -2,55 +2,116 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_ce_flutter/hive_ce_flutter.dart';
 
-/// Local persistence entry point (Phase 3).
+/// Local persistence seam (Phase 3).
 ///
-/// First slice: best score + games played. We keep a single key-value [Box]
-/// of primitive values (no custom TypeAdapters yet) — the simplest thing that
-/// works while the storage schema is still small. As the schema grows
-/// (lives/energy, settings, round history) we can split boxes or introduce
-/// adapters without changing this seam's callers.
-class StorageService {
-  StorageService._(this._box);
-
-  /// Builds a service over an already-open [Box]. Used by [init] and by tests
-  /// that open a box against a temporary Hive directory.
-  @visibleForTesting
-  factory StorageService.fromBox(Box box) = StorageService._;
-
-  static const String boxName = 'erumind_stats';
+/// Like [QuestionRepository], storage sits behind an interface so the game core
+/// never depends on a concrete backend. Production uses [HiveStorageService];
+/// tests use [InMemoryStorageService] (no real file I/O, so widget tests stay
+/// deterministic). All typed accessors live here and delegate to three tiny
+/// primitives, so a backend only implements key-value read/write/delete.
+abstract class StorageService {
   static const String _bestScoreKey = 'best_score';
   static const String _gamesPlayedKey = 'games_played';
+  static const String _livesKey = 'lives';
+  static const String _refillAnchorKey = 'lives_refill_anchor_ms';
 
-  final Box _box;
+  @protected
+  Object? readValue(String key);
 
-  /// Initializes the Hive CE runtime and opens the stats box.
-  ///
-  /// Call once at app startup (before `runApp`). Returns a ready-to-use
-  /// service so it can be injected into Riverpod via a ProviderScope override.
-  static Future<StorageService> init() async {
-    await Hive.initFlutter();
-    final box = await Hive.openBox(boxName);
-    return StorageService._(box);
-  }
+  @protected
+  Future<void> writeValue(String key, Object value);
+
+  @protected
+  Future<void> deleteValue(String key);
+
+  /// Releases backend resources. No-op for the in-memory backend.
+  Future<void> close();
 
   /// Highest score the player has ever reached in a round. 0 if never played.
-  int get bestScore => _box.get(_bestScoreKey, defaultValue: 0) as int;
+  int get bestScore => (readValue(_bestScoreKey) as int?) ?? 0;
 
   /// Total number of rounds the player has finished.
-  int get gamesPlayed => _box.get(_gamesPlayedKey, defaultValue: 0) as int;
+  int get gamesPlayed => (readValue(_gamesPlayedKey) as int?) ?? 0;
 
   /// Records a finished round: bumps [gamesPlayed] and raises [bestScore] when
   /// [score] beats the current best. Returns true if a new best was set.
   Future<bool> recordRound(int score) async {
     final isNewBest = score > bestScore;
-    await _box.put(_gamesPlayedKey, gamesPlayed + 1);
+    await writeValue(_gamesPlayedKey, gamesPlayed + 1);
     if (isNewBest) {
-      await _box.put(_bestScoreKey, score);
+      await writeValue(_bestScoreKey, score);
     }
     return isNewBest;
   }
 
+  /// Stored life count, or null if the player has never been initialized.
+  /// Regeneration is applied by the lives controller, not here.
+  int? get storedLives => readValue(_livesKey) as int?;
+
+  /// Anchor for the regeneration clock: the moment the current pending life
+  /// started refilling. Null when never set (e.g. lives are full).
+  DateTime? get refillAnchor {
+    final ms = readValue(_refillAnchorKey) as int?;
+    return ms == null ? null : DateTime.fromMillisecondsSinceEpoch(ms);
+  }
+
+  /// Persists the lives count and its regeneration [anchor] together. Passing a
+  /// null [anchor] clears it (used when lives are full and the clock stops).
+  Future<void> saveLives(int lives, DateTime? anchor) async {
+    await writeValue(_livesKey, lives);
+    if (anchor == null) {
+      await deleteValue(_refillAnchorKey);
+    } else {
+      await writeValue(_refillAnchorKey, anchor.millisecondsSinceEpoch);
+    }
+  }
+}
+
+/// Production backend: a single Hive CE box of primitive values.
+class HiveStorageService extends StorageService {
+  HiveStorageService._(this._box);
+
+  static const String boxName = 'erumind_stats';
+
+  final Box _box;
+
+  /// Initializes the Hive CE runtime and opens the stats box. Call once at app
+  /// startup (before `runApp`) so the ready instance can be injected.
+  static Future<HiveStorageService> init() async {
+    await Hive.initFlutter();
+    final box = await Hive.openBox(boxName);
+    return HiveStorageService._(box);
+  }
+
+  @override
+  Object? readValue(String key) => _box.get(key);
+
+  @override
+  Future<void> writeValue(String key, Object value) => _box.put(key, value);
+
+  @override
+  Future<void> deleteValue(String key) => _box.delete(key);
+
+  @override
   Future<void> close() => Hive.close();
+}
+
+/// In-memory backend for tests: a plain map, no file I/O. Writes complete on a
+/// microtask, so `pump`/`pumpAndSettle` settle normally in widget tests.
+class InMemoryStorageService extends StorageService {
+  final Map<String, Object> _data = {};
+
+  @override
+  Object? readValue(String key) => _data[key];
+
+  @override
+  Future<void> writeValue(String key, Object value) async => _data[key] = value;
+
+  @override
+  Future<void> deleteValue(String key) async => _data.remove(key);
+
+  @override
+  Future<void> close() async {}
 }
 
 /// Provides the app-wide [StorageService].
@@ -58,7 +119,7 @@ class StorageService {
 /// This base provider intentionally throws: the real, already-initialized
 /// instance is injected in `main()` via a ProviderScope override (Hive must be
 /// opened asynchronously before the widget tree builds). Tests override it with
-/// a [StorageService.fromBox] backed by a temporary Hive box.
+/// an [InMemoryStorageService].
 final storageServiceProvider = Provider<StorageService>((ref) {
   throw UnimplementedError(
     'storageServiceProvider must be overridden in main() (or in tests).',

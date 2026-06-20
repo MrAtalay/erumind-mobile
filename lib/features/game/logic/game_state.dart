@@ -1,6 +1,12 @@
 import '../../../data/models/answer_result.dart';
 import '../../../data/models/question.dart';
 
+/// Where a round currently sits in its lifecycle.
+///
+/// [lobby] is the pre-round gate (shows lives + a Play button); no questions
+/// are loaded yet. [playing] is an active round; [finished] is the summary.
+enum GamePhase { lobby, playing, finished }
+
 /// Immutable snapshot of one round of play.
 ///
 /// Plain immutable class (not freezed): this is short-lived UI state local to
@@ -8,17 +14,23 @@ import '../../../data/models/question.dart';
 /// data models (Question, Category) use freezed.
 class GameState {
   const GameState({
-    required this.questions,
+    this.phase = GamePhase.lobby,
+    this.questions = const [],
     this.currentIndex = 0,
     this.score = 0,
     this.selectedIndex,
     this.lastResult,
-    this.isFinished = false,
     this.bestScore = 0,
     this.isNewBest = false,
   });
 
-  /// The questions for this round, already ordered.
+  /// The pre-round lobby: no active round yet.
+  const GameState.lobby() : this();
+
+  /// Lifecycle phase of this round.
+  final GamePhase phase;
+
+  /// The questions for this round, already ordered. Empty in the lobby.
   final List<Question> questions;
 
   /// Index of the question currently shown.
@@ -33,14 +45,15 @@ class GameState {
   /// Validation result for the current question, or null if unanswered.
   final AnswerResult? lastResult;
 
-  /// True once the round is over (results screen).
-  final bool isFinished;
-
   /// Persisted best score, populated when the round finishes. 0 otherwise.
   final int bestScore;
 
   /// True when this round set a new best score (for a "New best!" badge).
   final bool isNewBest;
+
+  bool get isLobby => phase == GamePhase.lobby;
+  bool get isPlaying => phase == GamePhase.playing;
+  bool get isFinished => phase == GamePhase.finished;
 
   Question get currentQuestion => questions[currentIndex];
 

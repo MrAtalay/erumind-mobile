@@ -10,7 +10,7 @@ Future<void> main() async {
 
   // Open local storage once, up front, then inject the ready instance so the
   // rest of the app can read it synchronously through Riverpod.
-  final storage = await StorageService.init();
+  final storage = await HiveStorageService.init();
 
   runApp(
     ProviderScope(
