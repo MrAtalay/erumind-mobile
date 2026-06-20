@@ -3,6 +3,7 @@
 
   "play": "Play",
   "playAgain": "Play again",
+  "spin": "Spin",
   "settings": "Settings",
   "menuNoGames": "No games yet",
   "bestPoints": "Best: {points} points",

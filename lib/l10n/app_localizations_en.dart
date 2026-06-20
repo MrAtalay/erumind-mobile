@@ -15,6 +15,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get playAgain => 'Play again';
 
   @override
+  String get spin => 'Spin';
+
+  @override
   String get settings => 'Settings';
 
   @override

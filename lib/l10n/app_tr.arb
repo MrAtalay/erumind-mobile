@@ -3,6 +3,7 @@
 
   "play": "Oyna",
   "playAgain": "Tekrar oyna",
+  "spin": "Çevir",
   "settings": "Ayarlar",
   "menuNoGames": "Henüz oyun yok",
   "bestPoints": "En iyi: {points} puan",

@@ -110,6 +110,12 @@ abstract class AppLocalizations {
   /// **'Play again'**
   String get playAgain;
 
+  /// No description provided for @spin.
+  ///
+  /// In en, this message translates to:
+  /// **'Spin'**
+  String get spin;
+
   /// No description provided for @settings.
   ///
   /// In en, this message translates to:
