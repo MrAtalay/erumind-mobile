@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../data/models/category.dart';
 import '../../../data/repositories/local_question_repository.dart';
 import '../../../data/repositories/question_repository.dart';
 import '../../../features/lives/logic/lives_controller.dart';
@@ -16,103 +17,139 @@ final questionRepositoryProvider = Provider<QuestionRepository>((ref) {
   return LocalQuestionRepository();
 });
 
-/// Drives a single round: gate on lives, load questions, accept an answer,
-/// advance, and return to the lobby.
-///
-/// We use an [AsyncNotifier] because loading a round is asynchronous. The app
-/// opens in the [GamePhase.lobby] state; [start] spends a life and loads the
-/// questions, moving into [GamePhase.playing].
-class GameController extends AsyncNotifier<GameState> {
-  static const int questionsPerRound = 10;
+/// The categories shown on the wheel.
+final categoriesProvider = FutureProvider<List<Category>>((ref) {
+  return ref.read(questionRepositoryProvider).getCategories();
+});
 
+/// Drives a "Momentum" run: spin the wheel for a category, answer one question,
+/// then bank the pot or risk it for a bigger multiplier. A wrong answer loses
+/// the unbanked pot and ends the run; the banked total is the final score.
+class GameController extends AsyncNotifier<GameState> {
   QuestionRepository get _repo => ref.read(questionRepositoryProvider);
   StorageService get _storage => ref.read(storageServiceProvider);
+
+  /// Questions already asked this run, so a run doesn't repeat one.
+  final Set<String> _asked = {};
 
   @override
   Future<GameState> build() async => const GameState.lobby();
 
-  Future<GameState> _newRound() async {
-    final all = await _repo.getQuestions();
-    final shuffled = [...all]..shuffle();
-    final picked = shuffled.take(questionsPerRound).toList(growable: false);
-    return GameState(phase: GamePhase.playing, questions: picked);
-  }
-
-  /// Spends one life and starts a fresh round. Returns false (leaving the state
-  /// untouched) when no life is available — the UI keeps showing the lobby gate
-  /// with its countdown. Loads the round before spending the life so a load
-  /// failure never burns a life.
+  /// Spends one life and begins a run at the wheel. Returns false (state
+  /// untouched) when no life is available.
   Future<bool> start() async {
     if (!ref.read(livesControllerProvider).canPlay) return false;
-
-    final round = await AsyncValue.guard(_newRound);
-    if (round.hasError) {
-      state = round;
-      return true;
-    }
-
     final consumed = await ref.read(livesControllerProvider.notifier).consumeLife();
     if (!consumed) return false;
 
-    state = round;
+    _asked.clear();
+    state = const AsyncData(GameState(phase: RunPhase.spinning));
     return true;
   }
 
-  /// Returns to the pre-round lobby (e.g. after a round, with no life cost).
+  /// Returns to the pre-run lobby (no life cost).
   void toLobby() => state = const AsyncData(GameState.lobby());
 
-  /// Record the player's choice for the current question.
-  Future<void> answer(int selectedIndex) async {
+  /// Called by the wheel once it lands: loads a question for [category].
+  Future<void> onCategorySelected(Category category) async {
     final current = state.value;
-    if (current == null || !current.isPlaying || current.isAnswered) return;
+    if (current == null || current.phase != RunPhase.spinning) return;
 
-    final result = await _repo.checkAnswer(
-      questionId: current.currentQuestion.id,
-      selectedIndex: selectedIndex,
-    );
+    final all = await _repo.getQuestions(categoryId: category.id);
+    final fresh = all.where((q) => !_asked.contains(q.id)).toList();
+    final pool = fresh.isEmpty ? all : fresh;
+    final question = (pool.toList()..shuffle()).first;
+    _asked.add(question.id);
 
-    final gained = result.isCorrect ? current.currentQuestion.difficulty.points : 0;
-
-    state = AsyncData(GameState(
-      phase: GamePhase.playing,
-      questions: current.questions,
-      currentIndex: current.currentIndex,
-      score: current.score + gained,
-      correctCount: current.correctCount + (result.isCorrect ? 1 : 0),
-      selectedIndex: selectedIndex,
-      lastResult: result,
+    state = AsyncData(current.copyWith(
+      phase: RunPhase.question,
+      category: category,
+      question: question,
+      clearAnswer: true,
     ));
   }
 
-  /// Move to the next question, or finish the round on the last one.
-  Future<void> next() async {
+  /// Records the player's choice for the current question.
+  Future<void> answer(int selectedIndex) async {
     final current = state.value;
-    if (current == null || !current.isAnswered) return;
-
-    if (current.isLastQuestion) {
-      // Persist the result before showing the summary so the results screen
-      // reads a settled best score (no race with the async write).
-      final isNewBest = await _storage.recordRound(current.score);
-      state = AsyncData(GameState(
-        phase: GamePhase.finished,
-        questions: current.questions,
-        currentIndex: current.currentIndex,
-        score: current.score,
-        correctCount: current.correctCount,
-        bestScore: _storage.bestScore,
-        isNewBest: isNewBest,
-      ));
+    if (current == null ||
+        current.phase != RunPhase.question ||
+        current.question == null) {
       return;
     }
 
-    state = AsyncData(GameState(
-      phase: GamePhase.playing,
-      questions: current.questions,
-      currentIndex: current.currentIndex + 1,
-      score: current.score,
-      correctCount: current.correctCount,
+    final result = await _repo.checkAnswer(
+      questionId: current.question!.id,
+      selectedIndex: selectedIndex,
+    );
+
+    if (result.isCorrect) {
+      final gained = (current.question!.difficulty.points * current.multiplier)
+          .round();
+      final nextStep =
+          (current.multiplierStep + 1).clamp(0, GameState.multiplierCurve.length - 1);
+      state = AsyncData(current.copyWith(
+        phase: RunPhase.decision,
+        selectedIndex: selectedIndex,
+        lastResult: result,
+        pot: current.pot + gained,
+        multiplierStep: nextStep,
+        correctCount: current.correctCount + 1,
+      ));
+    } else {
+      // Wrong: the unbanked pot is lost and the run is over (shown on decision).
+      state = AsyncData(current.copyWith(
+        phase: RunPhase.decision,
+        selectedIndex: selectedIndex,
+        lastResult: result,
+        pot: 0,
+      ));
+    }
+  }
+
+  /// Secures the pot, resets the multiplier, and spins again. Only valid after
+  /// a correct answer.
+  void bank() {
+    final s = state.value;
+    if (!_canDecideAfterCorrect(s)) return;
+    state = AsyncData(s!.copyWith(
+      phase: RunPhase.spinning,
+      banked: s.banked + s.pot,
+      pot: 0,
+      multiplierStep: 0,
+      clearQuestion: true,
     ));
   }
+
+  /// Keeps the pot at risk, grows the multiplier, and spins again. Only valid
+  /// after a correct answer.
+  void risk() {
+    final s = state.value;
+    if (!_canDecideAfterCorrect(s)) return;
+    state = AsyncData(s!.copyWith(
+      phase: RunPhase.spinning,
+      clearQuestion: true,
+    ));
+  }
+
+  /// Ends the run: banks any remaining pot and records the score. Used both by
+  /// "Finish" (after a correct answer) and "See results" (after a wrong one).
+  Future<void> endRun() async {
+    final s = state.value;
+    if (s == null || s.phase != RunPhase.decision) return;
+    final settled = s.copyWith(banked: s.banked + s.pot, pot: 0);
+    final isNewBest = await _storage.recordRound(settled.banked);
+    state = AsyncData(settled.copyWith(
+      phase: RunPhase.finished,
+      bestScore: _storage.bestScore,
+      isNewBest: isNewBest,
+    ));
+  }
+
+  bool _canDecideAfterCorrect(GameState? s) =>
+      s != null &&
+      s.phase == RunPhase.decision &&
+      (s.lastResult?.isCorrect ?? false);
 }
 
 final gameControllerProvider =

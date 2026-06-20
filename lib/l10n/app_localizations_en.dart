@@ -79,4 +79,39 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get newBest => 'New best!';
+
+  @override
+  String get spinPrompt => 'Spin the wheel!';
+
+  @override
+  String banked(int points) {
+    return 'Banked: $points';
+  }
+
+  @override
+  String pot(int points) {
+    return 'Pot: $points';
+  }
+
+  @override
+  String multiplier(String value) {
+    return '×$value';
+  }
+
+  @override
+  String get bank => 'Bank';
+
+  @override
+  String get riskIt => 'Risk it';
+
+  @override
+  String get finish => 'Finish';
+
+  @override
+  String get runOver => 'Wrong — run over';
+
+  @override
+  String correctAnswers(int count) {
+    return 'Correct answers: $count';
+  }
 }

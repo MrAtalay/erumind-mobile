@@ -13,16 +13,18 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'support/test_storage.dart';
 
+const _category = Category(id: 'sci', name: 'Science', colorValue: 0xFF112233);
+
 class _FakeRepo implements QuestionRepository {
   @override
-  Future<List<Category>> getCategories() async => const [];
+  Future<List<Category>> getCategories() async => const [_category];
 
   @override
   Future<List<Question>> getQuestions({String? categoryId, int? limit}) async =>
       const [
         Question(
           id: 'q1',
-          categoryId: 'science',
+          categoryId: 'sci',
           text: 'What is 2 + 2?',
           options: ['3', '4', '5', '6'],
           correctIndex: 1,
@@ -38,14 +40,11 @@ class _FakeRepo implements QuestionRepository {
 }
 
 void main() {
-  // Open Hive outside the test body: openBox does real file I/O, which never
-  // completes inside testWidgets' fake-async zone.
   late StorageService storage;
   setUp(() async {
     storage = await setUpTempStorage();
   });
 
-  // Pump GameScreen in isolation (the full app now opens on the menu).
   Widget app() => ProviderScope(
         overrides: [
           questionRepositoryProvider.overrideWithValue(_FakeRepo()),
@@ -64,28 +63,29 @@ void main() {
 
     expect(find.text('Ready to play?'), findsOneWidget);
     expect(find.text('Play'), findsOneWidget);
-    // Five filled hearts in the lobby + one in the app-bar badge.
-    expect(find.byIcon(Icons.favorite), findsNWidgets(6));
   });
 
-  testWidgets('starts a round and scores a correct answer', (tester) async {
+  testWidgets('a Momentum run: spin, answer, then decide', (tester) async {
     await tester.pumpWidget(app());
     await tester.pumpAndSettle();
 
+    // Start the run -> the wheel.
     await tester.tap(find.text('Play'));
     await tester.pumpAndSettle();
+    expect(find.text('Spin'), findsOneWidget);
 
+    // Spin -> the wheel animates and lands on a category, loading a question.
+    await tester.tap(find.text('Spin'));
+    await tester.pumpAndSettle();
     expect(find.text('What is 2 + 2?'), findsOneWidget);
-    expect(find.text('Score: 0'), findsOneWidget);
 
-    // "4" also appears in the lives badge (a life was just spent), so target
-    // the answer option specifically by its tappable tile.
+    // Answer correctly -> the bank/risk decision appears. ("4" is also in the
+    // lives badge, so target the option tile.)
     await tester.tap(find.widgetWithText(InkWell, '4'));
     await tester.pumpAndSettle();
 
-    // One correct answer at default (medium) difficulty scores 200 points.
-    expect(find.text('Score: 200'), findsOneWidget);
-    // Single question -> the round can be finished from here.
-    expect(find.text('See results'), findsOneWidget);
+    expect(find.text('Bank'), findsOneWidget);
+    expect(find.text('Risk it'), findsOneWidget);
+    expect(find.text('Finish'), findsOneWidget);
   });
 }

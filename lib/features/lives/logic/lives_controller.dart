@@ -1,7 +1,13 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../services/storage_service.dart';
 import 'lives_state.dart';
+
+/// Whether the lives/energy gate is enforced. Disabled in debug so dev builds
+/// can play freely; enforced in release. Tests override it to exercise the
+/// lives logic deterministically.
+final livesEnabledProvider = Provider<bool>((ref) => kReleaseMode);
 
 /// Injectable wall clock. Tests override this to control time without waiting.
 final clockProvider = Provider<DateTime Function()>((ref) => DateTime.now);
@@ -23,9 +29,15 @@ class LivesController extends Notifier<LivesState> {
   LivesConfig get _config => ref.read(livesConfigProvider);
   DateTime Function() get _clock => ref.read(clockProvider);
 
+  bool get _enabled => ref.read(livesEnabledProvider);
+
   @override
   LivesState build() {
     final config = _config;
+    // When the gate is off, always report a full, non-depleting bar.
+    if (!_enabled) {
+      return LivesState(lives: config.maxLives, anchor: null, max: config.maxLives);
+    }
     final stored = _storage.storedLives;
     // Brand-new player: start full with the clock stopped.
     return regenerateLives(
@@ -39,6 +51,7 @@ class LivesController extends Notifier<LivesState> {
   /// Re-applies regeneration at the current time. Called on each ticker tick so
   /// a life earned while sitting on the lobby shows up immediately.
   void refresh() {
+    if (!_enabled) return;
     state = regenerateLives(
       lives: state.lives,
       anchor: state.anchor,
@@ -48,8 +61,9 @@ class LivesController extends Notifier<LivesState> {
   }
 
   /// Spends one life to start a round. Returns false (without changing storage)
-  /// when none are available.
+  /// when none are available. When the gate is off, it's a free no-op.
   Future<bool> consumeLife() async {
+    if (!_enabled) return true;
     final now = _clock();
     final current = regenerateLives(
       lives: state.lives,

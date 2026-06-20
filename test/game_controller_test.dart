@@ -4,6 +4,7 @@ import 'package:erumind/data/models/question.dart';
 import 'package:erumind/data/models/question_difficulty.dart';
 import 'package:erumind/data/repositories/question_repository.dart';
 import 'package:erumind/features/game/logic/game_controller.dart';
+import 'package:erumind/features/game/logic/game_state.dart';
 import 'package:erumind/features/lives/logic/lives_controller.dart';
 import 'package:erumind/services/storage_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,174 +12,161 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'support/test_storage.dart';
 
-/// Fake repository with deterministic, local validation for scoring tests.
+/// One Science category with a single medium-difficulty question (200 points,
+/// correct = option 0), so the wheel/question flow is deterministic.
+const _category = Category(id: 'sci', name: 'Science', colorValue: 0xFF000000);
+final _question = Question(
+  id: 'q1',
+  categoryId: 'sci',
+  text: 'Q',
+  options: const ['a', 'b', 'c', 'd'],
+  correctIndex: 0,
+  difficulty: QuestionDifficulty.medium,
+);
+
 class _FakeRepo implements QuestionRepository {
-  _FakeRepo(this.questions);
-
-  final List<Question> questions;
-
   @override
-  Future<List<Category>> getCategories() async => const [];
+  Future<List<Category>> getCategories() async => const [_category];
 
   @override
   Future<List<Question>> getQuestions({String? categoryId, int? limit}) async =>
-      questions;
+      categoryId == null
+          ? [_question]
+          : [_question].where((q) => q.categoryId == categoryId).toList();
 
   @override
   Future<AnswerResult> checkAnswer({
     required String questionId,
     required int selectedIndex,
-  }) async {
-    final q = questions.firstWhere((e) => e.id == questionId);
-    return AnswerResult(
-      isCorrect: selectedIndex == q.correctIndex,
-      correctIndex: q.correctIndex!,
-    );
-  }
+  }) async =>
+      AnswerResult(isCorrect: selectedIndex == 0, correctIndex: 0);
 }
 
-List<Question> _makeQuestions(int n) => [
-      for (var i = 0; i < n; i++)
-        Question(
-          id: 'q$i',
-          categoryId: 'science',
-          text: 'Q$i',
-          options: const ['a', 'b', 'c', 'd'],
-          correctIndex: i % 4,
-        ),
-    ];
-
-Future<ProviderContainer> _container(List<Question> questions) async {
+Future<ProviderContainer> _container() async {
   final storage = await setUpTempStorage();
   final container = ProviderContainer(overrides: [
-    questionRepositoryProvider.overrideWithValue(_FakeRepo(questions)),
+    questionRepositoryProvider.overrideWithValue(_FakeRepo()),
     storageServiceProvider.overrideWithValue(storage),
+    // Exercise the real lives logic (the gate is off by default in debug).
+    livesEnabledProvider.overrideWithValue(true),
   ]);
   addTearDown(container.dispose);
   return container;
 }
 
+GameState _state(ProviderContainer c) =>
+    c.read(gameControllerProvider).requireValue;
+
+/// Drives start -> spin -> question, leaving the state at an unanswered
+/// question.
+Future<GameController> _toQuestion(ProviderContainer c) async {
+  await c.read(gameControllerProvider.future);
+  final controller = c.read(gameControllerProvider.notifier);
+  await controller.start();
+  await controller.onCategorySelected(_category);
+  return controller;
+}
+
 void main() {
-  test('a round is capped at questionsPerRound', () async {
-    final container = await _container(_makeQuestions(25));
-    await container.read(gameControllerProvider.future); // lobby
-    final controller = container.read(gameControllerProvider.notifier);
-    await controller.start();
+  test('start spends a life and enters the spinning phase', () async {
+    final c = await _container();
+    await c.read(gameControllerProvider.future);
+    final controller = c.read(gameControllerProvider.notifier);
+    final before = c.read(livesControllerProvider).lives;
 
-    final state = container.read(gameControllerProvider).requireValue;
-    expect(state.total, GameController.questionsPerRound);
+    expect(await controller.start(), isTrue);
+
+    expect(_state(c).phase, RunPhase.spinning);
+    expect(c.read(livesControllerProvider).lives, before - 1);
   });
 
-  test('answering every question correctly scores full marks', () async {
-    final container = await _container(_makeQuestions(5));
-    await container.read(gameControllerProvider.future);
-    final controller = container.read(gameControllerProvider.notifier);
-    await controller.start();
+  test('a correct answer adds difficulty-weighted points to the pot', () async {
+    final c = await _container();
+    final controller = await _toQuestion(c);
 
-    while (true) {
-      final state = container.read(gameControllerProvider).requireValue;
-      if (state.isFinished) break;
-      await controller.answer(state.currentQuestion.correctIndex!);
-      await controller.next();
-    }
+    await controller.answer(0);
 
-    final finished = container.read(gameControllerProvider).requireValue;
-    expect(finished.isFinished, isTrue);
-    expect(finished.correctCount, 5);
-    expect(finished.score, 5 * 200); // default difficulty is medium (200)
+    final s = _state(c);
+    expect(s.phase, RunPhase.decision);
+    expect(s.pot, 200); // medium (200) x1.0
+    expect(s.multiplierStep, 1);
+    expect(s.correctCount, 1);
   });
 
-  test('answering every question wrong scores zero', () async {
-    final container = await _container(_makeQuestions(5));
-    await container.read(gameControllerProvider.future);
-    final controller = container.read(gameControllerProvider.notifier);
-    await controller.start();
+  test('banking secures the pot and resets the multiplier', () async {
+    final c = await _container();
+    final controller = await _toQuestion(c);
+    await controller.answer(0);
 
-    while (true) {
-      final state = container.read(gameControllerProvider).requireValue;
-      if (state.isFinished) break;
-      final wrong = (state.currentQuestion.correctIndex! + 1) % 4;
-      await controller.answer(wrong);
-      await controller.next();
-    }
+    controller.bank();
 
-    final finished = container.read(gameControllerProvider).requireValue;
-    expect(finished.score, 0);
+    final s = _state(c);
+    expect(s.phase, RunPhase.spinning);
+    expect(s.banked, 200);
+    expect(s.pot, 0);
+    expect(s.multiplierStep, 0);
   });
 
-  test('a second answer on the same question is ignored', () async {
-    final container = await _container(_makeQuestions(3));
-    await container.read(gameControllerProvider.future);
-    final controller = container.read(gameControllerProvider.notifier);
-    await controller.start();
+  test('risking keeps the pot and grows the multiplier', () async {
+    final c = await _container();
+    final controller = await _toQuestion(c);
+    await controller.answer(0); // pot 200, step 1
 
-    final current = container.read(gameControllerProvider).requireValue;
-    final correct = current.currentQuestion.correctIndex!;
-    await controller.answer(correct);
-    await controller.answer((correct + 1) % 4); // should be a no-op
+    controller.risk();
+    expect(_state(c).phase, RunPhase.spinning);
+    expect(_state(c).pot, 200);
 
-    final after = container.read(gameControllerProvider).requireValue;
-    expect(after.score, 200); // one correct medium-difficulty answer
-    expect(after.selectedIndex, correct);
+    await controller.onCategorySelected(_category);
+    await controller.answer(0); // +200 x1.5 = 300 -> pot 500
+
+    final s = _state(c);
+    expect(s.pot, 500);
+    expect(s.multiplierStep, 2);
   });
 
-  test('finishing a round records the score as a new best', () async {
-    final container = await _container(_makeQuestions(3));
-    await container.read(gameControllerProvider.future);
-    final controller = container.read(gameControllerProvider.notifier);
-    await controller.start();
+  test('a wrong answer loses the pot but keeps the banked total', () async {
+    final c = await _container();
+    final controller = await _toQuestion(c);
+    await controller.answer(0); // pot 200
+    controller.bank(); // banked 200
 
-    while (true) {
-      final state = container.read(gameControllerProvider).requireValue;
-      if (state.isFinished) break;
-      await controller.answer(state.currentQuestion.correctIndex!);
-      await controller.next();
-    }
+    await controller.onCategorySelected(_category);
+    await controller.answer(1); // wrong
 
-    final finished = container.read(gameControllerProvider).requireValue;
-    expect(finished.score, 3 * 200);
-    expect(finished.bestScore, 3 * 200);
-    expect(finished.isNewBest, isTrue);
+    expect(_state(c).phase, RunPhase.decision);
+    expect(_state(c).pot, 0);
+
+    await controller.endRun();
+
+    final s = _state(c);
+    expect(s.phase, RunPhase.finished);
+    expect(s.banked, 200);
   });
 
-  test('score is weighted by question difficulty', () async {
-    // A single hard question scores 300, not the default-medium 200 — proving
-    // the score is difficulty-weighted. (A single question avoids the shuffle
-    // making order non-deterministic.)
-    final container = await _container([
-      Question(
-        id: 'hard',
-        categoryId: 'science',
-        text: 'hard one',
-        options: const ['a', 'b', 'c', 'd'],
-        correctIndex: 0,
-        difficulty: QuestionDifficulty.hard,
-      ),
-    ]);
-    await container.read(gameControllerProvider.future);
-    final controller = container.read(gameControllerProvider.notifier);
-    await controller.start();
+  test('finishing banks the pot and records a new best', () async {
+    final c = await _container();
+    final controller = await _toQuestion(c);
+    await controller.answer(0); // pot 200
 
-    await controller.answer(0); // hard, correct -> +300
-    await controller.next();
+    await controller.endRun();
 
-    final finished = container.read(gameControllerProvider).requireValue;
-    expect(finished.score, 300);
-    expect(finished.correctCount, 1);
+    final s = _state(c);
+    expect(s.phase, RunPhase.finished);
+    expect(s.banked, 200);
+    expect(s.bestScore, 200);
+    expect(s.isNewBest, isTrue);
   });
 
-  test('starting spends a life and is blocked when out of lives', () async {
-    final container = await _container(_makeQuestions(5));
-    await container.read(gameControllerProvider.future);
-    final controller = container.read(gameControllerProvider.notifier);
-    final maxLives = container.read(livesControllerProvider).max;
+  test('start is blocked when out of lives', () async {
+    final c = await _container();
+    await c.read(gameControllerProvider.future);
+    final controller = c.read(gameControllerProvider.notifier);
+    final maxLives = c.read(livesControllerProvider).max;
 
     for (var i = 0; i < maxLives; i++) {
       expect(await controller.start(), isTrue);
     }
-    expect(container.read(livesControllerProvider).lives, 0);
-
-    // No lives left: start is refused and the previous round is left intact.
+    expect(c.read(livesControllerProvider).lives, 0);
     expect(await controller.start(), isFalse);
   });
 }

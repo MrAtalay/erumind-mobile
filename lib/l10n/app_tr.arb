@@ -24,5 +24,15 @@
   "roundComplete": "Tur bitti!",
   "points": "{points} puan",
   "correctOutOf": "Doğru: {correct} / {total}",
-  "newBest": "Yeni rekor!"
+  "newBest": "Yeni rekor!",
+
+  "spinPrompt": "Çarkı çevir!",
+  "banked": "Banka: {points}",
+  "pot": "Tencere: {points}",
+  "multiplier": "×{value}",
+  "bank": "Bankala",
+  "riskIt": "Risk et",
+  "finish": "Bitir",
+  "runOver": "Yanlış — koşu bitti",
+  "correctAnswers": "Doğru cevap: {count}"
 }

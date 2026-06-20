@@ -144,17 +144,31 @@ class _WheelPainter extends CustomPainter {
         text: text,
         style: const TextStyle(
           color: Colors.white,
-          fontSize: 15,
+          fontSize: 14,
           fontWeight: FontWeight.w700,
         ),
       ),
       textDirection: TextDirection.ltr,
+      maxLines: 1,
     )..layout();
+
+    // The radial band available for the label (outside the hub, inside the rim).
+    const innerFactor = 0.20;
+    const outerFactor = 0.92;
+    final available = radius * (outerFactor - innerFactor);
+    final mid = radius * (innerFactor + outerFactor) / 2;
+    // Shrink long labels (e.g. "Entertainment") so they never spill past the rim.
+    final scale = tp.width > available ? available / tp.width : 1.0;
 
     canvas.save();
     canvas.rotate(angle);
-    // Place the label out along the radius, vertically centred on the spoke.
-    canvas.translate(radius * 0.42, -tp.height / 2);
+    canvas.translate(mid, 0);
+    // Keep text upright: flip the spokes that currently point to the left half.
+    if (math.cos(rotation + angle) < 0) {
+      canvas.rotate(math.pi);
+    }
+    canvas.scale(scale);
+    canvas.translate(-tp.width / 2, -tp.height / 2);
     tp.paint(canvas, Offset.zero);
     canvas.restore();
   }

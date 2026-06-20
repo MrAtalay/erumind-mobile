@@ -5,9 +5,10 @@ import '../../../l10n/app_localizations.dart';
 import '../../lives/logic/lives_controller.dart';
 import '../logic/game_controller.dart';
 import '../logic/game_state.dart';
+import 'widgets/category_wheel.dart';
 
-/// The single-player game screen: a lives-gated lobby, an active round, and an
-/// end-of-round summary. No menu or wheel yet — just the core loop.
+/// The single-player game screen: a lives-gated lobby and the "Momentum" run
+/// (spin the wheel, answer, then bank or risk the pot).
 class GameScreen extends ConsumerWidget {
   const GameScreen({super.key});
 
@@ -27,9 +28,10 @@ class GameScreen extends ConsumerWidget {
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (err, _) => Center(child: Text('Something went wrong:\n$err')),
           data: (state) => switch (state.phase) {
-            GamePhase.lobby => const _LobbyView(),
-            GamePhase.playing => _QuestionView(state: state),
-            GamePhase.finished => _ResultsView(state: state),
+            RunPhase.lobby => const _LobbyView(),
+            RunPhase.spinning => _SpinningView(state: state),
+            RunPhase.question || RunPhase.decision => _PlayfieldView(state: state),
+            RunPhase.finished => _ResultsView(state: state),
           },
         ),
       ),
@@ -56,8 +58,8 @@ class _LivesBadge extends ConsumerWidget {
   }
 }
 
-/// The pre-round gate: shows hearts and a Play button (or a countdown when out
-/// of lives).
+/// The pre-run gate: hearts and a Play button (or a countdown when out of
+/// lives).
 class _LobbyView extends StatelessWidget {
   const _LobbyView();
 
@@ -108,9 +110,6 @@ class _HeartsRow extends ConsumerWidget {
 }
 
 /// Lives-gated play control shared by the lobby and the results screen.
-///
-/// When a life is available it starts a round; otherwise it disables itself and
-/// shows a live countdown to the next life.
 class _PlayButton extends ConsumerWidget {
   const _PlayButton({required this.label});
 
@@ -128,8 +127,7 @@ class _PlayButton extends ConsumerWidget {
       );
     }
 
-    // Out of lives: tick once a second to update the countdown, and re-apply
-    // regeneration so the button re-enables the moment a life is earned.
+    // Out of lives: tick to update the countdown and re-apply regeneration.
     ref.listen(tickerProvider, (_, _) {
       ref.read(livesControllerProvider.notifier).refresh();
     });
@@ -157,74 +155,195 @@ String _formatDuration(Duration d) {
   return d.inHours > 0 ? '${d.inHours}:$minutes:$seconds' : '$minutes:$seconds';
 }
 
-/// Shows the current question, the four options, and post-answer feedback.
-class _QuestionView extends ConsumerWidget {
-  const _QuestionView({required this.state});
+String _formatMultiplier(double m) =>
+    m == m.roundToDouble() ? m.toInt().toString() : m.toString();
+
+/// A compact run status bar: banked points, the at-risk pot, and the
+/// multiplier.
+class _RunHud extends StatelessWidget {
+  const _RunHud({required this.state});
+
+  final GameState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(l10n.banked(state.banked), style: theme.textTheme.titleMedium),
+          Text(l10n.pot(state.pot), style: theme.textTheme.titleMedium),
+          Text(
+            l10n.multiplier(_formatMultiplier(state.multiplier)),
+            style: theme.textTheme.titleMedium
+                ?.copyWith(fontWeight: FontWeight.bold),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The wheel step: spin to pick a category for the next question.
+class _SpinningView extends ConsumerWidget {
+  const _SpinningView({required this.state});
 
   final GameState state;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final controller = ref.read(gameControllerProvider.notifier);
-    final question = state.currentQuestion;
-    final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
+    final controller = ref.read(gameControllerProvider.notifier);
+    final categoriesAsync = ref.watch(categoriesProvider);
 
-    return Padding(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Progress + score header.
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(l10n.questionProgress(state.questionNumber, state.total),
-                  style: theme.textTheme.titleMedium),
-              Text(l10n.score(state.score),
-                  style: theme.textTheme.titleMedium),
-            ],
-          ),
-          const SizedBox(height: 24),
-
-          // Question text.
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Text(
-                question.text,
-                style: theme.textTheme.headlineSmall,
+    return Column(
+      children: [
+        _RunHud(state: state),
+        Expanded(
+          child: categoriesAsync.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (err, _) => Center(child: Text('$err')),
+            data: (categories) => Center(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(l10n.spinPrompt,
+                        style: Theme.of(context).textTheme.titleLarge),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: 300,
+                      child: CategoryWheel(
+                        categories: categories,
+                        spinLabel: l10n.spin,
+                        onSelected: controller.onCategorySelected,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
-          const SizedBox(height: 24),
+        ),
+      ],
+    );
+  }
+}
 
-          // The four options.
-          for (var i = 0; i < question.options.length; i++) ...[
-            _OptionTile(
-              label: question.options[i],
-              state: _optionStateFor(i),
-              onTap: state.isAnswered ? null : () => controller.answer(i),
+/// Shows the current question and its four options, plus the post-answer
+/// decision controls (bank / risk / finish, or end the run on a wrong answer).
+class _PlayfieldView extends ConsumerWidget {
+  const _PlayfieldView({required this.state});
+
+  final GameState state;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
+    final controller = ref.read(gameControllerProvider.notifier);
+    final theme = Theme.of(context);
+    final question = state.question!;
+    final answered = state.isDecision;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _RunHud(state: state),
+        Expanded(
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (state.category != null)
+                    Text(state.category!.name,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                            color: Color(state.category!.colorValue),
+                            fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 12),
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Text(question.text,
+                          style: theme.textTheme.headlineSmall),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  for (var i = 0; i < question.options.length; i++) ...[
+                    _OptionTile(
+                      label: question.options[i],
+                      state: _optionStateFor(i),
+                      onTap: answered ? null : () => controller.answer(i),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                  const SizedBox(height: 12),
+                  if (answered) _decisionControls(context, l10n, controller),
+                ],
+              ),
             ),
-            const SizedBox(height: 12),
-          ],
-
-          const Spacer(),
-
-          // Next / Finish button appears only after answering.
-          if (state.isAnswered)
-            FilledButton(
-              onPressed: controller.next,
-              child: Text(state.isLastQuestion ? l10n.seeResults : l10n.next),
-            ),
-        ],
-      ),
+          ),
+        ),
+      ],
     );
   }
 
-  /// Decide how option [i] should look given the current answer state.
+  Widget _decisionControls(
+    BuildContext context,
+    AppLocalizations l10n,
+    GameController controller,
+  ) {
+    final correct = state.lastResult?.isCorrect ?? false;
+    if (!correct) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(l10n.runOver,
+              style: Theme.of(context)
+                  .textTheme
+                  .titleMedium
+                  ?.copyWith(color: Colors.red.shade700)),
+          const SizedBox(height: 12),
+          FilledButton(
+            onPressed: controller.endRun,
+            child: Text(l10n.seeResults),
+          ),
+        ],
+      );
+    }
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: FilledButton(
+                onPressed: controller.bank,
+                child: Text(l10n.bank),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: FilledButton.tonal(
+                onPressed: controller.risk,
+                child: Text(l10n.riskIt),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        TextButton(onPressed: controller.endRun, child: Text(l10n.finish)),
+      ],
+    );
+  }
+
   _OptionVisualState _optionStateFor(int i) {
-    if (!state.isAnswered) return _OptionVisualState.idle;
+    if (!state.isDecision) return _OptionVisualState.idle;
     final correctIndex = state.lastResult!.correctIndex;
     if (i == correctIndex) return _OptionVisualState.correct;
     if (i == state.selectedIndex) return _OptionVisualState.wrong;
@@ -279,7 +398,7 @@ class _OptionTile extends StatelessWidget {
   }
 }
 
-/// End-of-round summary with a lives-gated play-again button.
+/// End-of-run summary with a lives-gated play-again button.
 class _ResultsView extends StatelessWidget {
   const _ResultsView({required this.state});
 
@@ -298,20 +417,13 @@ class _ResultsView extends StatelessWidget {
           children: [
             Text(l10n.roundComplete, style: theme.textTheme.headlineMedium),
             const SizedBox(height: 16),
-            Text(
-              l10n.points(state.score),
-              style: theme.textTheme.headlineSmall,
-            ),
+            Text(l10n.points(state.banked), style: theme.textTheme.displaySmall),
             const SizedBox(height: 4),
-            Text(
-              l10n.correctOutOf(state.correctCount, state.total),
-              style: theme.textTheme.titleMedium,
-            ),
+            Text(l10n.correctAnswers(state.correctCount),
+                style: theme.textTheme.titleMedium),
             const SizedBox(height: 8),
-            Text(
-              l10n.bestPoints(state.bestScore),
-              style: theme.textTheme.titleMedium,
-            ),
+            Text(l10n.bestPoints(state.bestScore),
+                style: theme.textTheme.titleMedium),
             if (state.isNewBest) ...[
               const SizedBox(height: 12),
               Chip(

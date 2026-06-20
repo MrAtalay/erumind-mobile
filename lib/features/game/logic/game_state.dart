@@ -1,47 +1,47 @@
 import '../../../data/models/answer_result.dart';
+import '../../../data/models/category.dart';
 import '../../../data/models/question.dart';
 
-/// Where a round currently sits in its lifecycle.
+/// Steps of a single Momentum run.
 ///
-/// [lobby] is the pre-round gate (shows lives + a Play button); no questions
-/// are loaded yet. [playing] is an active round; [finished] is the summary.
-enum GamePhase { lobby, playing, finished }
+/// [lobby] is the pre-run gate. A run then cycles [spinning] (pick a category
+/// on the wheel) -> [question] (answer it) -> [decision] (bank or risk the pot),
+/// and ends in [finished].
+enum RunPhase { lobby, spinning, question, decision, finished }
 
-/// Immutable snapshot of one round of play.
+/// Immutable snapshot of a Momentum run.
 ///
-/// Plain immutable class (not freezed): this is short-lived UI state local to
-/// the game feature, so we keep it dependency-free and easy to read. Domain
-/// data models (Question, Category) use freezed.
+/// Scoring: a correct answer adds `difficulty points x multiplier` to the
+/// at-risk [pot]. Banking moves the pot into [banked] (safe) and resets the
+/// multiplier; a wrong answer loses the pot and ends the run. The final score
+/// is [banked].
 class GameState {
   const GameState({
-    this.phase = GamePhase.lobby,
-    this.questions = const [],
-    this.currentIndex = 0,
-    this.score = 0,
-    this.correctCount = 0,
+    this.phase = RunPhase.lobby,
+    this.category,
+    this.question,
     this.selectedIndex,
     this.lastResult,
+    this.banked = 0,
+    this.pot = 0,
+    this.multiplierStep = 0,
+    this.correctCount = 0,
     this.bestScore = 0,
     this.isNewBest = false,
   });
 
-  /// The pre-round lobby: no active round yet.
   const GameState.lobby() : this();
 
-  /// Lifecycle phase of this round.
-  final GamePhase phase;
+  /// The multipliers earned by consecutive correct answers without banking.
+  static const List<double> multiplierCurve = [1.0, 1.5, 2.0, 2.5, 3.0];
 
-  /// The questions for this round, already ordered. Empty in the lobby.
-  final List<Question> questions;
+  final RunPhase phase;
 
-  /// Index of the question currently shown.
-  final int currentIndex;
+  /// Category the wheel landed on for the current question.
+  final Category? category;
 
-  /// Difficulty-weighted points earned so far.
-  final int score;
-
-  /// Number of questions answered correctly so far (for the "x / total" line).
-  final int correctCount;
+  /// The question currently being asked.
+  final Question? question;
 
   /// The option the player tapped for the current question, or null.
   final int? selectedIndex;
@@ -49,24 +49,66 @@ class GameState {
   /// Validation result for the current question, or null if unanswered.
   final AnswerResult? lastResult;
 
-  /// Persisted best score, populated when the round finishes. 0 otherwise.
+  /// Points already secured this run (the final score).
+  final int banked;
+
+  /// At-risk points: kept on a bank, lost on a wrong answer.
+  final int pot;
+
+  /// Index into [multiplierCurve] for the current streak.
+  final int multiplierStep;
+
+  /// Correct answers so far this run.
+  final int correctCount;
+
+  /// Persisted best score, populated when the run finishes. 0 otherwise.
   final int bestScore;
 
-  /// True when this round set a new best score (for a "New best!" badge).
+  /// True when this run set a new best score (for a "New best!" badge).
   final bool isNewBest;
 
-  bool get isLobby => phase == GamePhase.lobby;
-  bool get isPlaying => phase == GamePhase.playing;
-  bool get isFinished => phase == GamePhase.finished;
+  bool get isLobby => phase == RunPhase.lobby;
+  bool get isSpinning => phase == RunPhase.spinning;
+  bool get isQuestion => phase == RunPhase.question;
+  bool get isDecision => phase == RunPhase.decision;
+  bool get isFinished => phase == RunPhase.finished;
 
-  Question get currentQuestion => questions[currentIndex];
+  /// Current multiplier, e.g. 1.5.
+  double get multiplier => multiplierCurve[multiplierStep];
 
-  bool get isAnswered => lastResult != null;
+  /// Total at stake if the next answer is wrong (the pot).
+  int get atRisk => pot;
 
-  bool get isLastQuestion => currentIndex == questions.length - 1;
-
-  int get total => questions.length;
-
-  /// Human-friendly position, e.g. "3 / 10".
-  int get questionNumber => currentIndex + 1;
+  GameState copyWith({
+    RunPhase? phase,
+    Category? category,
+    Question? question,
+    int? selectedIndex,
+    AnswerResult? lastResult,
+    int? banked,
+    int? pot,
+    int? multiplierStep,
+    int? correctCount,
+    int? bestScore,
+    bool? isNewBest,
+    bool clearQuestion = false,
+    bool clearAnswer = false,
+  }) {
+    return GameState(
+      phase: phase ?? this.phase,
+      category: clearQuestion ? null : (category ?? this.category),
+      question: clearQuestion ? null : (question ?? this.question),
+      selectedIndex: clearAnswer || clearQuestion
+          ? null
+          : (selectedIndex ?? this.selectedIndex),
+      lastResult:
+          clearAnswer || clearQuestion ? null : (lastResult ?? this.lastResult),
+      banked: banked ?? this.banked,
+      pot: pot ?? this.pot,
+      multiplierStep: multiplierStep ?? this.multiplierStep,
+      correctCount: correctCount ?? this.correctCount,
+      bestScore: bestScore ?? this.bestScore,
+      isNewBest: isNewBest ?? this.isNewBest,
+    );
+  }
 }

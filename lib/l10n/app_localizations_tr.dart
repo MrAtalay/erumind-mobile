@@ -79,4 +79,39 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get newBest => 'Yeni rekor!';
+
+  @override
+  String get spinPrompt => 'Çarkı çevir!';
+
+  @override
+  String banked(int points) {
+    return 'Banka: $points';
+  }
+
+  @override
+  String pot(int points) {
+    return 'Tencere: $points';
+  }
+
+  @override
+  String multiplier(String value) {
+    return '×$value';
+  }
+
+  @override
+  String get bank => 'Bankala';
+
+  @override
+  String get riskIt => 'Risk et';
+
+  @override
+  String get finish => 'Bitir';
+
+  @override
+  String get runOver => 'Yanlış — koşu bitti';
+
+  @override
+  String correctAnswers(int count) {
+    return 'Doğru cevap: $count';
+  }
 }

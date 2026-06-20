@@ -42,5 +42,27 @@
   "@correctOutOf": {
     "placeholders": { "correct": { "type": "int" }, "total": { "type": "int" } }
   },
-  "newBest": "New best!"
+  "newBest": "New best!",
+
+  "spinPrompt": "Spin the wheel!",
+  "banked": "Banked: {points}",
+  "@banked": {
+    "placeholders": { "points": { "type": "int" } }
+  },
+  "pot": "Pot: {points}",
+  "@pot": {
+    "placeholders": { "points": { "type": "int" } }
+  },
+  "multiplier": "×{value}",
+  "@multiplier": {
+    "placeholders": { "value": { "type": "String" } }
+  },
+  "bank": "Bank",
+  "riskIt": "Risk it",
+  "finish": "Finish",
+  "runOver": "Wrong — run over",
+  "correctAnswers": "Correct answers: {count}",
+  "@correctAnswers": {
+    "placeholders": { "count": { "type": "int" } }
+  }
 }

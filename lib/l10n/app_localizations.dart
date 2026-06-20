@@ -217,6 +217,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'New best!'**
   String get newBest;
+
+  /// No description provided for @spinPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Spin the wheel!'**
+  String get spinPrompt;
+
+  /// No description provided for @banked.
+  ///
+  /// In en, this message translates to:
+  /// **'Banked: {points}'**
+  String banked(int points);
+
+  /// No description provided for @pot.
+  ///
+  /// In en, this message translates to:
+  /// **'Pot: {points}'**
+  String pot(int points);
+
+  /// No description provided for @multiplier.
+  ///
+  /// In en, this message translates to:
+  /// **'×{value}'**
+  String multiplier(String value);
+
+  /// No description provided for @bank.
+  ///
+  /// In en, this message translates to:
+  /// **'Bank'**
+  String get bank;
+
+  /// No description provided for @riskIt.
+  ///
+  /// In en, this message translates to:
+  /// **'Risk it'**
+  String get riskIt;
+
+  /// No description provided for @finish.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish'**
+  String get finish;
+
+  /// No description provided for @runOver.
+  ///
+  /// In en, this message translates to:
+  /// **'Wrong — run over'**
+  String get runOver;
+
+  /// No description provided for @correctAnswers.
+  ///
+  /// In en, this message translates to:
+  /// **'Correct answers: {count}'**
+  String correctAnswers(int count);
 }
 
 class _AppLocalizationsDelegate
