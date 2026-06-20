@@ -40,4 +40,17 @@ void main() {
     expect(storage.bestScore, 9);
     expect(storage.gamesPlayed, 2);
   });
+
+  test('category mastery starts at zero and increments independently', () async {
+    final storage = await setUpTempStorage();
+    expect(storage.masteryFor('science'), 0);
+
+    expect(await storage.incrementMastery('science'), 1);
+    expect(await storage.incrementMastery('science'), 2);
+    expect(await storage.incrementMastery('history'), 1);
+
+    expect(storage.masteryFor('science'), 2);
+    expect(storage.masteryFor('history'), 1);
+    expect(storage.masteryFor('art'), 0);
+  });
 }

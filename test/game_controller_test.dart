@@ -6,6 +6,7 @@ import 'package:erumind/data/repositories/question_repository.dart';
 import 'package:erumind/features/game/logic/game_controller.dart';
 import 'package:erumind/features/game/logic/game_state.dart';
 import 'package:erumind/features/lives/logic/lives_controller.dart';
+import 'package:erumind/features/mastery/logic/crowns.dart';
 import 'package:erumind/services/storage_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -42,13 +43,15 @@ class _FakeRepo implements QuestionRepository {
       AnswerResult(isCorrect: selectedIndex == 0, correctIndex: 0);
 }
 
-Future<ProviderContainer> _container() async {
+Future<ProviderContainer> _container({int crownThreshold = 100}) async {
   final storage = await setUpTempStorage();
   final container = ProviderContainer(overrides: [
     questionRepositoryProvider.overrideWithValue(_FakeRepo()),
     storageServiceProvider.overrideWithValue(storage),
     // Exercise the real lives logic (the gate is off by default in debug).
     livesEnabledProvider.overrideWithValue(true),
+    // High by default so unrelated tests don't accidentally earn crowns.
+    crownThresholdProvider.overrideWithValue(crownThreshold),
   ]);
   addTearDown(container.dispose);
   return container;
@@ -155,6 +158,24 @@ void main() {
     expect(s.banked, 200);
     expect(s.bestScore, 200);
     expect(s.isNewBest, isTrue);
+  });
+
+  test('earning a crown at the threshold surfaces it on the run', () async {
+    final c = await _container(crownThreshold: 2);
+    await c.read(gameControllerProvider.future);
+    final controller = c.read(gameControllerProvider.notifier);
+    await controller.start();
+
+    await controller.onCategorySelected(_category);
+    await controller.answer(0); // mastery 1 -> no crown yet
+    expect(_state(c).newCrowns, isEmpty);
+
+    controller.risk();
+    await controller.onCategorySelected(_category);
+    await controller.answer(0); // mastery 2 == threshold -> crown earned
+
+    expect(_state(c).newCrowns, contains('Science'));
+    expect(c.read(storageServiceProvider).masteryFor('sci'), 2);
   });
 
   test('start is blocked when out of lives', () async {

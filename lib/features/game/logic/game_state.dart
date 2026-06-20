@@ -28,6 +28,7 @@ class GameState {
     this.correctCount = 0,
     this.bestScore = 0,
     this.isNewBest = false,
+    this.newCrowns = const [],
   });
 
   const GameState.lobby() : this();
@@ -67,6 +68,10 @@ class GameState {
   /// True when this run set a new best score (for a "New best!" badge).
   final bool isNewBest;
 
+  /// Names of categories whose crown was earned during this run (for the
+  /// results screen). Empty otherwise.
+  final List<String> newCrowns;
+
   bool get isLobby => phase == RunPhase.lobby;
   bool get isSpinning => phase == RunPhase.spinning;
   bool get isQuestion => phase == RunPhase.question;
@@ -91,6 +96,7 @@ class GameState {
     int? correctCount,
     int? bestScore,
     bool? isNewBest,
+    List<String>? newCrowns,
     bool clearQuestion = false,
     bool clearAnswer = false,
   }) {
@@ -109,6 +115,7 @@ class GameState {
       correctCount: correctCount ?? this.correctCount,
       bestScore: bestScore ?? this.bestScore,
       isNewBest: isNewBest ?? this.isNewBest,
+      newCrowns: newCrowns ?? this.newCrowns,
     );
   }
 }

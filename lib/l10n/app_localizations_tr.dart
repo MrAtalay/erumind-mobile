@@ -114,4 +114,14 @@ class AppLocalizationsTr extends AppLocalizations {
   String correctAnswers(int count) {
     return 'Doğru cevap: $count';
   }
+
+  @override
+  String crownsProgress(int earned, int total) {
+    return 'Taçlar: $earned / $total';
+  }
+
+  @override
+  String newCrown(String category) {
+    return 'Yeni taç: $category!';
+  }
 }

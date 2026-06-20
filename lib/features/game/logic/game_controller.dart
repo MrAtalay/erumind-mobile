@@ -4,6 +4,7 @@ import '../../../data/models/category.dart';
 import '../../../data/repositories/local_question_repository.dart';
 import '../../../data/repositories/question_repository.dart';
 import '../../../features/lives/logic/lives_controller.dart';
+import '../../../features/mastery/logic/crowns.dart';
 import '../../../services/storage_service.dart';
 import 'game_state.dart';
 import 'scoring.dart';
@@ -88,6 +89,15 @@ class GameController extends AsyncNotifier<GameState> {
           .round();
       final nextStep =
           (current.multiplierStep + 1).clamp(0, GameState.multiplierCurve.length - 1);
+
+      // Grow category mastery; earning the crown exactly at the threshold.
+      final category = current.category!;
+      final mastery = await _storage.incrementMastery(category.id);
+      final justEarnedCrown = mastery == ref.read(crownThresholdProvider);
+      final newCrowns = justEarnedCrown
+          ? [...current.newCrowns, category.name]
+          : current.newCrowns;
+
       state = AsyncData(current.copyWith(
         phase: RunPhase.decision,
         selectedIndex: selectedIndex,
@@ -95,6 +105,7 @@ class GameController extends AsyncNotifier<GameState> {
         pot: current.pot + gained,
         multiplierStep: nextStep,
         correctCount: current.correctCount + 1,
+        newCrowns: newCrowns,
       ));
     } else {
       // Wrong: the unbanked pot is lost and the run is over (shown on decision).

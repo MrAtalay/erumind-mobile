@@ -432,6 +432,15 @@ class _ResultsView extends StatelessWidget {
                 backgroundColor: Colors.amber.shade100,
               ),
             ],
+            for (final crown in state.newCrowns) ...[
+              const SizedBox(height: 8),
+              Chip(
+                avatar: Icon(Icons.emoji_events,
+                    size: 18, color: Colors.amber.shade800),
+                label: Text(l10n.newCrown(crown)),
+                backgroundColor: Colors.amber.shade100,
+              ),
+            ],
             const SizedBox(height: 32),
             _PlayButton(label: l10n.playAgain),
           ],

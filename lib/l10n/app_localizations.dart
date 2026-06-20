@@ -271,6 +271,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Correct answers: {count}'**
   String correctAnswers(int count);
+
+  /// No description provided for @crownsProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Crowns: {earned} / {total}'**
+  String crownsProgress(int earned, int total);
+
+  /// No description provided for @newCrown.
+  ///
+  /// In en, this message translates to:
+  /// **'New crown: {category}!'**
+  String newCrown(String category);
 }
 
 class _AppLocalizationsDelegate

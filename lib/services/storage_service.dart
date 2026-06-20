@@ -15,6 +15,7 @@ abstract class StorageService {
   static const String _livesKey = 'lives';
   static const String _refillAnchorKey = 'lives_refill_anchor_ms';
   static const String _localeKey = 'locale_code';
+  static const String _masteryPrefix = 'mastery_';
 
   @protected
   Object? readValue(String key);
@@ -77,6 +78,18 @@ abstract class StorageService {
     } else {
       await writeValue(_localeKey, code);
     }
+  }
+
+  /// How many questions the player has answered correctly in [categoryId]
+  /// across all runs (drives crown progress). 0 if none yet.
+  int masteryFor(String categoryId) =>
+      (readValue('$_masteryPrefix$categoryId') as int?) ?? 0;
+
+  /// Records one more correct answer in [categoryId] and returns the new total.
+  Future<int> incrementMastery(String categoryId) async {
+    final next = masteryFor(categoryId) + 1;
+    await writeValue('$_masteryPrefix$categoryId', next);
+    return next;
   }
 }
 

@@ -114,4 +114,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String correctAnswers(int count) {
     return 'Correct answers: $count';
   }
+
+  @override
+  String crownsProgress(int earned, int total) {
+    return 'Crowns: $earned / $total';
+  }
+
+  @override
+  String newCrown(String category) {
+    return 'New crown: $category!';
+  }
 }

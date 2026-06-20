@@ -64,5 +64,13 @@
   "correctAnswers": "Correct answers: {count}",
   "@correctAnswers": {
     "placeholders": { "count": { "type": "int" } }
+  },
+  "crownsProgress": "Crowns: {earned} / {total}",
+  "@crownsProgress": {
+    "placeholders": { "earned": { "type": "int" }, "total": { "type": "int" } }
+  },
+  "newCrown": "New crown: {category}!",
+  "@newCrown": {
+    "placeholders": { "category": { "type": "String" } }
   }
 }

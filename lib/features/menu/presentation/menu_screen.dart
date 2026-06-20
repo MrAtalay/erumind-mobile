@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../features/game/logic/game_controller.dart';
+import '../../../features/mastery/logic/crowns.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../services/storage_service.dart';
 
@@ -16,7 +18,14 @@ class MenuScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
-    final bestScore = ref.watch(storageServiceProvider).bestScore;
+    final storage = ref.watch(storageServiceProvider);
+    final bestScore = storage.bestScore;
+
+    // Crowns earned so far (rebuilt on every return to the menu).
+    final threshold = ref.watch(crownThresholdProvider);
+    final categories = ref.watch(categoriesProvider).value ?? const [];
+    final crownsEarned =
+        categories.where((c) => storage.masteryFor(c.id) >= threshold).length;
 
     return Scaffold(
       body: SafeArea(
@@ -32,6 +41,22 @@ class MenuScreen extends ConsumerWidget {
                   bestScore > 0 ? l10n.bestPoints(bestScore) : l10n.menuNoGames,
                   style: theme.textTheme.titleMedium,
                 ),
+                if (categories.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.emoji_events,
+                          size: 20,
+                          color: crownsEarned > 0
+                              ? Colors.amber.shade700
+                              : theme.disabledColor),
+                      const SizedBox(width: 6),
+                      Text(l10n.crownsProgress(crownsEarned, categories.length),
+                          style: theme.textTheme.titleMedium),
+                    ],
+                  ),
+                ],
                 const SizedBox(height: 48),
                 FilledButton(
                   onPressed: () => context.push('/game'),
