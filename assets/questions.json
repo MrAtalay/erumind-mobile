@@ -17,6 +17,24 @@
       "name": "Geography",
       "colorValue": 4278225275,
       "description": "Countries, capitals, oceans and landmarks."
+    },
+    {
+      "id": "sports",
+      "name": "Sports",
+      "colorValue": 4278228616,
+      "description": "Games, rules, athletes and competitions."
+    },
+    {
+      "id": "art",
+      "name": "Art",
+      "colorValue": 4288423856,
+      "description": "Painting, sculpture, colors and techniques."
+    },
+    {
+      "id": "entertainment",
+      "name": "Entertainment",
+      "colorValue": 4294942720,
+      "description": "Music, film, stage and general culture."
     }
   ],
   "questions": [
@@ -306,6 +324,198 @@
       "text": "Which strait separates Europe from Africa at its narrowest point?",
       "options": ["Strait of Hormuz", "Strait of Gibraltar", "Bosphorus", "Strait of Malacca"],
       "correctIndex": 1,
+      "difficulty": "medium"
+    },
+    {
+      "id": "spo-001",
+      "categoryId": "sports",
+      "text": "How many players from one team are on the pitch at the start of a football (soccer) match?",
+      "options": ["9", "10", "11", "12"],
+      "correctIndex": 2,
+      "difficulty": "easy"
+    },
+    {
+      "id": "spo-002",
+      "categoryId": "sports",
+      "text": "In tennis, what word is used for a score of zero?",
+      "options": ["Love", "Nil", "Duck", "Blank"],
+      "correctIndex": 0,
+      "difficulty": "easy"
+    },
+    {
+      "id": "spo-003",
+      "categoryId": "sports",
+      "text": "How many rings appear on the Olympic flag?",
+      "options": ["4", "5", "6", "7"],
+      "correctIndex": 1,
+      "difficulty": "easy"
+    },
+    {
+      "id": "spo-004",
+      "categoryId": "sports",
+      "text": "A shot made from beyond the arc in basketball is worth how many points?",
+      "options": ["1", "2", "3", "4"],
+      "correctIndex": 2,
+      "difficulty": "easy"
+    },
+    {
+      "id": "spo-005",
+      "categoryId": "sports",
+      "text": "Which sport features the terms \"strike\" and \"spare\"?",
+      "options": ["Golf", "Bowling", "Darts", "Curling"],
+      "correctIndex": 1,
+      "difficulty": "easy"
+    },
+    {
+      "id": "spo-006",
+      "categoryId": "sports",
+      "text": "How many squares are there on a standard chessboard?",
+      "options": ["36", "49", "64", "81"],
+      "correctIndex": 2,
+      "difficulty": "medium"
+    },
+    {
+      "id": "spo-007",
+      "categoryId": "sports",
+      "text": "How often are the modern Summer Olympic Games normally held?",
+      "options": ["Every 2 years", "Every 3 years", "Every 4 years", "Every 5 years"],
+      "correctIndex": 2,
+      "difficulty": "easy"
+    },
+    {
+      "id": "spo-008",
+      "categoryId": "sports",
+      "text": "In a standard marathon, the race distance is closest to which value?",
+      "options": ["21 km", "30 km", "42 km", "50 km"],
+      "correctIndex": 2,
+      "difficulty": "medium"
+    },
+    {
+      "id": "art-001",
+      "categoryId": "art",
+      "text": "Mixing which two primary colors of paint produces green?",
+      "options": ["Red and blue", "Blue and yellow", "Red and yellow", "Black and white"],
+      "correctIndex": 1,
+      "difficulty": "easy"
+    },
+    {
+      "id": "art-002",
+      "categoryId": "art",
+      "text": "What is the art of decorative, beautiful handwriting called?",
+      "options": ["Origami", "Calligraphy", "Mosaic", "Etching"],
+      "correctIndex": 1,
+      "difficulty": "medium"
+    },
+    {
+      "id": "art-003",
+      "categoryId": "art",
+      "text": "A painting that depicts an arrangement of everyday objects like fruit or flowers is known as a what?",
+      "options": ["Portrait", "Landscape", "Still life", "Mural"],
+      "correctIndex": 2,
+      "difficulty": "medium"
+    },
+    {
+      "id": "art-004",
+      "categoryId": "art",
+      "text": "Which tool is most associated with applying oil paint to a canvas?",
+      "options": ["Chisel", "Brush", "Loom", "Kiln"],
+      "correctIndex": 1,
+      "difficulty": "easy"
+    },
+    {
+      "id": "art-005",
+      "categoryId": "art",
+      "text": "A picture made by fitting together small pieces of colored glass or stone is called a what?",
+      "options": ["Mosaic", "Fresco", "Collage", "Sketch"],
+      "correctIndex": 0,
+      "difficulty": "medium"
+    },
+    {
+      "id": "art-006",
+      "categoryId": "art",
+      "text": "The three traditional primary colors are red, yellow, and which other?",
+      "options": ["Green", "Blue", "Purple", "Orange"],
+      "correctIndex": 1,
+      "difficulty": "easy"
+    },
+    {
+      "id": "art-007",
+      "categoryId": "art",
+      "text": "The secondary colors are orange, green, and which other?",
+      "options": ["Purple", "Brown", "Pink", "Gray"],
+      "correctIndex": 0,
+      "difficulty": "medium"
+    },
+    {
+      "id": "art-008",
+      "categoryId": "art",
+      "text": "What term describes a painting made on freshly applied wet plaster on a wall?",
+      "options": ["Fresco", "Collage", "Etching", "Pastel"],
+      "correctIndex": 0,
+      "difficulty": "hard"
+    },
+    {
+      "id": "ent-001",
+      "categoryId": "entertainment",
+      "text": "How many strings does a standard guitar have?",
+      "options": ["4", "5", "6", "7"],
+      "correctIndex": 2,
+      "difficulty": "easy"
+    },
+    {
+      "id": "ent-002",
+      "categoryId": "entertainment",
+      "text": "How many suits are there in a standard deck of playing cards?",
+      "options": ["2", "3", "4", "5"],
+      "correctIndex": 2,
+      "difficulty": "easy"
+    },
+    {
+      "id": "ent-003",
+      "categoryId": "entertainment",
+      "text": "A story performed live by actors on a stage is called a what?",
+      "options": ["Novel", "Play", "Poem", "Essay"],
+      "correctIndex": 1,
+      "difficulty": "easy"
+    },
+    {
+      "id": "ent-004",
+      "categoryId": "entertainment",
+      "text": "How many keys does a standard full-size piano have?",
+      "options": ["76", "88", "96", "100"],
+      "correctIndex": 1,
+      "difficulty": "medium"
+    },
+    {
+      "id": "ent-005",
+      "categoryId": "entertainment",
+      "text": "A film built from drawn or computer-generated images rather than live actors is called what?",
+      "options": ["Documentary", "Animation", "Newsreel", "Thriller"],
+      "correctIndex": 1,
+      "difficulty": "easy"
+    },
+    {
+      "id": "ent-006",
+      "categoryId": "entertainment",
+      "text": "A large group of musicians playing together under a conductor is called a what?",
+      "options": ["Band", "Choir", "Orchestra", "Duet"],
+      "correctIndex": 2,
+      "difficulty": "easy"
+    },
+    {
+      "id": "ent-007",
+      "categoryId": "entertainment",
+      "text": "In common 4/4 time, how many beats does a whole note last?",
+      "options": ["1", "2", "3", "4"],
+      "correctIndex": 3,
+      "difficulty": "medium"
+    },
+    {
+      "id": "ent-008",
+      "categoryId": "entertainment",
+      "text": "How many players take part in a doubles match in table tennis?",
+      "options": ["2", "3", "4", "5"],
+      "correctIndex": 2,
       "difficulty": "medium"
     }
   ]
