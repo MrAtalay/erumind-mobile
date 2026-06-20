@@ -1,22 +1,31 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
+import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
-import 'features/game/presentation/game_screen.dart';
 
 /// Root widget of the app.
 ///
-/// For the Phase 1 vertical slice we go straight to [GameScreen] with a plain
-/// [MaterialApp]. Routing (go_router) and a real menu arrive in Phase 4.
-class EruMindApp extends StatelessWidget {
+/// Stateful so the [GoRouter] is created exactly once per app instance (routers
+/// must not be rebuilt on every `build`); a fresh instance also keeps widget
+/// tests isolated.
+class EruMindApp extends StatefulWidget {
   const EruMindApp({super.key});
 
   @override
+  State<EruMindApp> createState() => _EruMindAppState();
+}
+
+class _EruMindAppState extends State<EruMindApp> {
+  late final GoRouter _router = createAppRouter();
+
+  @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return MaterialApp.router(
       title: 'EruMind',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
-      home: const GameScreen(),
+      routerConfig: _router,
     );
   }
 }

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-import 'package:erumind/app.dart';
 import 'package:erumind/data/models/answer_result.dart';
 import 'package:erumind/data/models/category.dart';
 import 'package:erumind/data/models/question.dart';
 import 'package:erumind/data/repositories/question_repository.dart';
 import 'package:erumind/features/game/logic/game_controller.dart';
+import 'package:erumind/features/game/presentation/game_screen.dart';
 import 'package:erumind/services/storage_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -44,12 +44,13 @@ void main() {
     storage = await setUpTempStorage();
   });
 
+  // Pump GameScreen in isolation (the full app now opens on the menu).
   Widget app() => ProviderScope(
         overrides: [
           questionRepositoryProvider.overrideWithValue(_FakeRepo()),
           storageServiceProvider.overrideWithValue(storage),
         ],
-        child: const EruMindApp(),
+        child: const MaterialApp(home: GameScreen()),
       );
 
   testWidgets('opens on the lives-gated lobby', (tester) async {
