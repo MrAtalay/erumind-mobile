@@ -111,6 +111,9 @@ class AppLocalizationsTr extends AppLocalizations {
   String get runOver => 'Yanlış — koşu bitti';
 
   @override
+  String get timeUp => 'Süre doldu — koşu bitti';
+
+  @override
   String correctAnswers(int count) {
     return 'Doğru cevap: $count';
   }

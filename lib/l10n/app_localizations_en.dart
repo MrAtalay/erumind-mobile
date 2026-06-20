@@ -111,6 +111,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get runOver => 'Wrong — run over';
 
   @override
+  String get timeUp => 'Time\'s up — run over';
+
+  @override
   String correctAnswers(int count) {
     return 'Correct answers: $count';
   }

@@ -61,6 +61,7 @@
   "riskIt": "Risk it",
   "finish": "Finish",
   "runOver": "Wrong — run over",
+  "timeUp": "Time's up — run over",
   "correctAnswers": "Correct answers: {count}",
   "@correctAnswers": {
     "placeholders": { "count": { "type": "int" } }

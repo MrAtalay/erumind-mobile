@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../data/models/answer_result.dart';
 import '../../../data/models/category.dart';
 import '../../../data/repositories/local_question_repository.dart';
 import '../../../data/repositories/question_repository.dart';
@@ -22,6 +23,10 @@ final questionRepositoryProvider = Provider<QuestionRepository>((ref) {
 final categoriesProvider = FutureProvider<List<Category>>((ref) {
   return ref.read(questionRepositoryProvider).getCategories();
 });
+
+/// How long the player has to answer each question. Overridable in tests.
+final questionDurationProvider =
+    Provider<Duration>((ref) => const Duration(seconds: 12));
 
 /// Drives a "Momentum" run: spin the wheel for a category, answer one question,
 /// then bank the pot or risk it for a bigger multiplier. A wrong answer loses
@@ -116,6 +121,25 @@ class GameController extends AsyncNotifier<GameState> {
         pot: 0,
       ));
     }
+  }
+
+  /// The question's timer ran out: treated as a wrong answer (lose the pot, end
+  /// the run). No-op if the question was already answered.
+  void timeUp() {
+    final current = state.value;
+    if (current == null ||
+        current.phase != RunPhase.question ||
+        current.question == null) {
+      return;
+    }
+    state = AsyncData(current.copyWith(
+      phase: RunPhase.decision,
+      pot: 0,
+      lastResult: AnswerResult(
+        isCorrect: false,
+        correctIndex: current.question!.correctIndex ?? -1,
+      ),
+    ));
   }
 
   /// Secures the pot, resets the multiplier, and spins again. Only valid after

@@ -266,6 +266,12 @@ abstract class AppLocalizations {
   /// **'Wrong — run over'**
   String get runOver;
 
+  /// No description provided for @timeUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Time\'s up — run over'**
+  String get timeUp;
+
   /// No description provided for @correctAnswers.
   ///
   /// In en, this message translates to:

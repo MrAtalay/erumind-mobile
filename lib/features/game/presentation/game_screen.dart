@@ -260,6 +260,11 @@ class _PlayfieldView extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  if (!answered)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: _QuestionTimer(key: ValueKey(question.id)),
+                    ),
                   if (state.category != null)
                     Text(state.category!.name,
                         style: theme.textTheme.titleMedium?.copyWith(
@@ -300,10 +305,12 @@ class _PlayfieldView extends ConsumerWidget {
   ) {
     final correct = state.lastResult?.isCorrect ?? false;
     if (!correct) {
+      // No selection means the timer ran out rather than a wrong tap.
+      final message = state.selectedIndex == null ? l10n.timeUp : l10n.runOver;
       return Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(l10n.runOver,
+          Text(message,
               style: Theme.of(context)
                   .textTheme
                   .titleMedium
@@ -348,6 +355,60 @@ class _PlayfieldView extends ConsumerWidget {
     if (i == correctIndex) return _OptionVisualState.correct;
     if (i == state.selectedIndex) return _OptionVisualState.wrong;
     return _OptionVisualState.dimmed;
+  }
+}
+
+/// A countdown bar for the current question. When it runs out it tells the
+/// controller (timeUp), which ends the run. Keyed by question id so a new
+/// question restarts it.
+class _QuestionTimer extends ConsumerStatefulWidget {
+  const _QuestionTimer({super.key});
+
+  @override
+  ConsumerState<_QuestionTimer> createState() => _QuestionTimerState();
+}
+
+class _QuestionTimerState extends ConsumerState<_QuestionTimer>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: ref.read(questionDurationProvider),
+    )
+      ..addStatusListener((status) {
+        if (status == AnimationStatus.completed) {
+          ref.read(gameControllerProvider.notifier).timeUp();
+        }
+      })
+      ..forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, _) {
+        final remaining = 1 - _controller.value;
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(6),
+          child: LinearProgressIndicator(
+            value: remaining,
+            minHeight: 8,
+            color: remaining < 0.3 ? Colors.red.shade600 : null,
+          ),
+        );
+      },
+    );
   }
 }
 

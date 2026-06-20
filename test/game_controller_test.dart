@@ -178,6 +178,19 @@ void main() {
     expect(c.read(storageServiceProvider).masteryFor('sci'), 2);
   });
 
+  test('running out of time ends the run as a loss', () async {
+    final c = await _container();
+    final controller = await _toQuestion(c);
+
+    controller.timeUp();
+
+    final s = _state(c);
+    expect(s.phase, RunPhase.decision);
+    expect(s.pot, 0);
+    expect(s.lastResult?.isCorrect, isFalse);
+    expect(s.selectedIndex, isNull); // no tap -> it was a timeout
+  });
+
   test('start is blocked when out of lives', () async {
     final c = await _container();
     await c.read(gameControllerProvider.future);

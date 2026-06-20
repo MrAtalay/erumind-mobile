@@ -49,6 +49,10 @@ void main() {
         overrides: [
           questionRepositoryProvider.overrideWithValue(_FakeRepo()),
           storageServiceProvider.overrideWithValue(storage),
+          // Long question timer so it never fires mid-test (we drive with timed
+          // pumps, not pumpAndSettle, which would run the countdown to the end).
+          questionDurationProvider
+              .overrideWithValue(const Duration(minutes: 10)),
         ],
         child: const MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -74,15 +78,20 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Spin'), findsOneWidget);
 
-    // Spin -> the wheel animates and lands on a category, loading a question.
+    // Spin -> the wheel animates (~2.8s) and lands, loading a question. Use
+    // timed pumps, not pumpAndSettle, so the question countdown doesn't run out.
     await tester.tap(find.text('Spin'));
-    await tester.pumpAndSettle();
+    await tester.pump(); // kick off the spin animation
+    await tester.pump(const Duration(seconds: 3)); // wheel runs and lands
+    await tester.pump(); // onCategorySelected resolves
+    await tester.pump(); // build the question + start its timer
     expect(find.text('What is 2 + 2?'), findsOneWidget);
 
     // Answer correctly -> the bank/risk decision appears. ("4" is also in the
     // lives badge, so target the option tile.)
     await tester.tap(find.widgetWithText(InkWell, '4'));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump();
 
     expect(find.text('Bank'), findsOneWidget);
     expect(find.text('Risk it'), findsOneWidget);

@@ -34,6 +34,7 @@
   "riskIt": "Risk et",
   "finish": "Bitir",
   "runOver": "Yanlış — koşu bitti",
+  "timeUp": "Süre doldu — koşu bitti",
   "correctAnswers": "Doğru cevap: {count}",
   "crownsProgress": "Taçlar: {earned} / {total}",
   "newCrown": "Yeni taç: {category}!"
