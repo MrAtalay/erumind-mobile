@@ -18,6 +18,7 @@ class GameState {
     this.questions = const [],
     this.currentIndex = 0,
     this.score = 0,
+    this.correctCount = 0,
     this.selectedIndex,
     this.lastResult,
     this.bestScore = 0,
@@ -36,8 +37,11 @@ class GameState {
   /// Index of the question currently shown.
   final int currentIndex;
 
-  /// Number of correct answers so far.
+  /// Difficulty-weighted points earned so far.
   final int score;
+
+  /// Number of questions answered correctly so far (for the "x / total" line).
+  final int correctCount;
 
   /// The option the player tapped for the current question, or null.
   final int? selectedIndex;

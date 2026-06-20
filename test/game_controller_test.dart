@@ -1,6 +1,7 @@
 import 'package:erumind/data/models/answer_result.dart';
 import 'package:erumind/data/models/category.dart';
 import 'package:erumind/data/models/question.dart';
+import 'package:erumind/data/models/question_difficulty.dart';
 import 'package:erumind/data/repositories/question_repository.dart';
 import 'package:erumind/features/game/logic/game_controller.dart';
 import 'package:erumind/features/lives/logic/lives_controller.dart';
@@ -83,7 +84,8 @@ void main() {
 
     final finished = container.read(gameControllerProvider).requireValue;
     expect(finished.isFinished, isTrue);
-    expect(finished.score, 5);
+    expect(finished.correctCount, 5);
+    expect(finished.score, 5 * 200); // default difficulty is medium (200)
   });
 
   test('answering every question wrong scores zero', () async {
@@ -116,7 +118,7 @@ void main() {
     await controller.answer((correct + 1) % 4); // should be a no-op
 
     final after = container.read(gameControllerProvider).requireValue;
-    expect(after.score, 1);
+    expect(after.score, 200); // one correct medium-difficulty answer
     expect(after.selectedIndex, correct);
   });
 
@@ -134,9 +136,35 @@ void main() {
     }
 
     final finished = container.read(gameControllerProvider).requireValue;
-    expect(finished.score, 3);
-    expect(finished.bestScore, 3);
+    expect(finished.score, 3 * 200);
+    expect(finished.bestScore, 3 * 200);
     expect(finished.isNewBest, isTrue);
+  });
+
+  test('score is weighted by question difficulty', () async {
+    // A single hard question scores 300, not the default-medium 200 — proving
+    // the score is difficulty-weighted. (A single question avoids the shuffle
+    // making order non-deterministic.)
+    final container = await _container([
+      Question(
+        id: 'hard',
+        categoryId: 'science',
+        text: 'hard one',
+        options: const ['a', 'b', 'c', 'd'],
+        correctIndex: 0,
+        difficulty: QuestionDifficulty.hard,
+      ),
+    ]);
+    await container.read(gameControllerProvider.future);
+    final controller = container.read(gameControllerProvider.notifier);
+    await controller.start();
+
+    await controller.answer(0); // hard, correct -> +300
+    await controller.next();
+
+    final finished = container.read(gameControllerProvider).requireValue;
+    expect(finished.score, 300);
+    expect(finished.correctCount, 1);
   });
 
   test('starting spends a life and is blocked when out of lives', () async {

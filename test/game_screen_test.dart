@@ -77,7 +77,8 @@ void main() {
     await tester.tap(find.widgetWithText(InkWell, '4'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Score: 1'), findsOneWidget);
+    // One correct answer at default (medium) difficulty scores 200 points.
+    expect(find.text('Score: 200'), findsOneWidget);
     // Single question -> the round can be finished from here.
     expect(find.text('See results'), findsOneWidget);
   });

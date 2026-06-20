@@ -294,12 +294,17 @@ class _ResultsView extends StatelessWidget {
             Text('Round complete!', style: theme.textTheme.headlineMedium),
             const SizedBox(height: 16),
             Text(
-              'You scored ${state.score} / ${state.total}',
-              style: theme.textTheme.titleLarge,
+              '${state.score} points',
+              style: theme.textTheme.headlineSmall,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Correct: ${state.correctCount} / ${state.total}',
+              style: theme.textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
             Text(
-              'Best: ${state.bestScore} / ${state.total}',
+              'Best: ${state.bestScore} points',
               style: theme.textTheme.titleMedium,
             ),
             if (state.isNewBest) ...[

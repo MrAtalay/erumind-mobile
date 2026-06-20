@@ -5,6 +5,7 @@ import '../../../data/repositories/question_repository.dart';
 import '../../../features/lives/logic/lives_controller.dart';
 import '../../../services/storage_service.dart';
 import 'game_state.dart';
+import 'scoring.dart';
 
 /// Provides the active [QuestionRepository] implementation.
 ///
@@ -70,11 +71,14 @@ class GameController extends AsyncNotifier<GameState> {
       selectedIndex: selectedIndex,
     );
 
+    final gained = result.isCorrect ? current.currentQuestion.difficulty.points : 0;
+
     state = AsyncData(GameState(
       phase: GamePhase.playing,
       questions: current.questions,
       currentIndex: current.currentIndex,
-      score: current.score + (result.isCorrect ? 1 : 0),
+      score: current.score + gained,
+      correctCount: current.correctCount + (result.isCorrect ? 1 : 0),
       selectedIndex: selectedIndex,
       lastResult: result,
     ));
@@ -94,6 +98,7 @@ class GameController extends AsyncNotifier<GameState> {
         questions: current.questions,
         currentIndex: current.currentIndex,
         score: current.score,
+        correctCount: current.correctCount,
         bestScore: _storage.bestScore,
         isNewBest: isNewBest,
       ));
@@ -105,6 +110,7 @@ class GameController extends AsyncNotifier<GameState> {
       questions: current.questions,
       currentIndex: current.currentIndex + 1,
       score: current.score,
+      correctCount: current.correctCount,
     ));
   }
 }
