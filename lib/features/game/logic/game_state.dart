@@ -9,12 +9,13 @@ import '../../../data/models/question.dart';
 /// and ends in [finished].
 enum RunPhase { lobby, spinning, question, decision, finished }
 
-/// Immutable snapshot of a Momentum run.
+/// Immutable snapshot of a Momentum session.
 ///
 /// Scoring: a correct answer adds `difficulty points x multiplier` to the
 /// at-risk [pot]. Banking moves the pot into [banked] (safe) and resets the
-/// multiplier; a wrong answer loses the pot and ends the run. The final score
-/// is [banked].
+/// multiplier; a wrong answer costs one life and resets the multiplier, but
+/// leaves the pot and [banked] untouched. The session ends — banking
+/// whatever's left — once lives run out. The final score is [banked].
 class GameState {
   const GameState({
     this.phase = RunPhase.lobby,

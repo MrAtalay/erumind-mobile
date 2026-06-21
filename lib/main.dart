@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app.dart';
+import 'services/audio_service.dart';
 import 'services/storage_service.dart';
 
 Future<void> main() async {
@@ -14,7 +15,10 @@ Future<void> main() async {
 
   runApp(
     ProviderScope(
-      overrides: [storageServiceProvider.overrideWithValue(storage)],
+      overrides: [
+        storageServiceProvider.overrideWithValue(storage),
+        audioServiceProvider.overrideWith(createAudioService),
+      ],
       child: const EruMindApp(),
     ),
   );

@@ -38,6 +38,9 @@ class AppLocalizationsTr extends AppLocalizations {
   String get languageTurkish => 'Türkçe';
 
   @override
+  String get settingsSound => 'Ses';
+
+  @override
   String get lobbyReady => 'Oynamaya hazır mısın?';
 
   @override
@@ -108,10 +111,16 @@ class AppLocalizationsTr extends AppLocalizations {
   String get finish => 'Bitir';
 
   @override
-  String get runOver => 'Yanlış — koşu bitti';
+  String get wrongAnswer => 'Yanlış!';
 
   @override
-  String get timeUp => 'Süre doldu — koşu bitti';
+  String get timeUp => 'Süre doldu!';
+
+  @override
+  String get gameOverNoLives => 'Canın kalmadı — oyun bitti';
+
+  @override
+  String get continuePlaying => 'Devam et';
 
   @override
   String correctAnswers(int count) {
@@ -127,4 +136,34 @@ class AppLocalizationsTr extends AppLocalizations {
   String newCrown(String category) {
     return 'Yeni taç: $category!';
   }
+
+  @override
+  String get onboardingTitle1 => 'Çarkı çevir';
+
+  @override
+  String get onboardingBody1 =>
+      'Her tur bir çevirmeyle başlar. Çark nereye düşerse, sıradaki sorunun kategorisi o olur.';
+
+  @override
+  String get onboardingTitle2 => 'Doğru cevapla potunu büyüt';
+
+  @override
+  String get onboardingBody2 =>
+      'Doğru cevap potuna puan ekler — art arda doğru cevapladıkça çarpan büyür.';
+
+  @override
+  String get onboardingTitle3 => 'Bankala ya da riske at';
+
+  @override
+  String get onboardingBody3 =>
+      'Potunu bankalayarak güvene al, ya da daha büyük bir çarpan için riske at. Yanlış cevap potunu değil, bir canını alır — oyun ancak canların biterse sona erer.';
+
+  @override
+  String get onboardingSkip => 'Geç';
+
+  @override
+  String get onboardingNext => 'İleri';
+
+  @override
+  String get onboardingGetStarted => 'Başlayalım';
 }

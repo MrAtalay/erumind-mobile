@@ -7,6 +7,7 @@ import 'package:erumind/features/game/logic/game_controller.dart';
 import 'package:erumind/features/game/logic/game_state.dart';
 import 'package:erumind/features/lives/logic/lives_controller.dart';
 import 'package:erumind/features/mastery/logic/crowns.dart';
+import 'package:erumind/services/audio_service.dart';
 import 'package:erumind/services/storage_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -48,6 +49,7 @@ Future<ProviderContainer> _container({int crownThreshold = 100}) async {
   final container = ProviderContainer(overrides: [
     questionRepositoryProvider.overrideWithValue(_FakeRepo()),
     storageServiceProvider.overrideWithValue(storage),
+    audioServiceProvider.overrideWithValue(const NoopAudioService()),
     // Exercise the real lives logic (the gate is off by default in debug).
     livesEnabledProvider.overrideWithValue(true),
     // High by default so unrelated tests don't accidentally earn crowns.
@@ -71,7 +73,7 @@ Future<GameController> _toQuestion(ProviderContainer c) async {
 }
 
 void main() {
-  test('start spends a life and enters the spinning phase', () async {
+  test('start does not spend a life and enters the spinning phase', () async {
     final c = await _container();
     await c.read(gameControllerProvider.future);
     final controller = c.read(gameControllerProvider.notifier);
@@ -80,7 +82,7 @@ void main() {
     expect(await controller.start(), isTrue);
 
     expect(_state(c).phase, RunPhase.spinning);
-    expect(c.read(livesControllerProvider).lives, before - 1);
+    expect(c.read(livesControllerProvider).lives, before);
   });
 
   test('a correct answer adds difficulty-weighted points to the pot', () async {
@@ -127,17 +129,49 @@ void main() {
     expect(s.multiplierStep, 2);
   });
 
-  test('a wrong answer loses the pot but keeps the banked total', () async {
+  test('a wrong answer costs a life but keeps the pot and banked total',
+      () async {
     final c = await _container();
     final controller = await _toQuestion(c);
     await controller.answer(0); // pot 200
     controller.bank(); // banked 200
 
     await controller.onCategorySelected(_category);
+    await controller.answer(0); // pot 200 again, step 1
+    controller.risk(); // keep it at risk
+
+    final livesBefore = c.read(livesControllerProvider).lives;
+    await controller.onCategorySelected(_category);
     await controller.answer(1); // wrong
 
-    expect(_state(c).phase, RunPhase.decision);
-    expect(_state(c).pot, 0);
+    final s = _state(c);
+    expect(s.phase, RunPhase.decision);
+    expect(s.pot, 200); // preserved, not lost
+    expect(s.banked, 200); // preserved
+    expect(s.multiplierStep, 0); // streak broken
+    expect(c.read(livesControllerProvider).lives, livesBefore - 1);
+  });
+
+  test('continuing after a non-fatal wrong answer returns to spinning',
+      () async {
+    final c = await _container();
+    final controller = await _toQuestion(c);
+    await controller.answer(1); // wrong
+
+    controller.continueAfterWrong();
+
+    expect(_state(c).phase, RunPhase.spinning);
+  });
+
+  test('ending the run after a wrong answer banks the preserved pot',
+      () async {
+    final c = await _container();
+    final controller = await _toQuestion(c);
+    await controller.answer(0); // pot 200
+    controller.bank(); // banked 200
+
+    await controller.onCategorySelected(_category);
+    await controller.answer(1); // wrong, pot stays 0 (nothing was at risk)
 
     await controller.endRun();
 
@@ -178,28 +212,38 @@ void main() {
     expect(c.read(storageServiceProvider).masteryFor('sci'), 2);
   });
 
-  test('running out of time ends the run as a loss', () async {
+  test('running out of time costs a life like a wrong answer', () async {
     final c = await _container();
     final controller = await _toQuestion(c);
+    await controller.answer(0); // pot 200, so we can check it's preserved
+    controller.risk();
+    await controller.onCategorySelected(_category);
+    final livesBefore = c.read(livesControllerProvider).lives;
 
-    controller.timeUp();
+    await controller.timeUp();
 
     final s = _state(c);
     expect(s.phase, RunPhase.decision);
-    expect(s.pot, 0);
+    expect(s.pot, 200); // preserved
     expect(s.lastResult?.isCorrect, isFalse);
     expect(s.selectedIndex, isNull); // no tap -> it was a timeout
+    expect(c.read(livesControllerProvider).lives, livesBefore - 1);
   });
 
-  test('start is blocked when out of lives', () async {
+  test('start is blocked once wrong answers exhaust all lives', () async {
     final c = await _container();
-    await c.read(gameControllerProvider.future);
-    final controller = c.read(gameControllerProvider.notifier);
     final maxLives = c.read(livesControllerProvider).max;
+    final controller = await _toQuestion(c);
 
     for (var i = 0; i < maxLives; i++) {
-      expect(await controller.start(), isTrue);
+      await controller.answer(1); // wrong
+      final isLastLife = i == maxLives - 1;
+      if (!isLastLife) {
+        controller.continueAfterWrong();
+        await controller.onCategorySelected(_category);
+      }
     }
+
     expect(c.read(livesControllerProvider).lives, 0);
     expect(await controller.start(), isFalse);
   });

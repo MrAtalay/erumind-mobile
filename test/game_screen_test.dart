@@ -7,6 +7,7 @@ import 'package:erumind/data/repositories/question_repository.dart';
 import 'package:erumind/features/game/logic/game_controller.dart';
 import 'package:erumind/features/game/presentation/game_screen.dart';
 import 'package:erumind/l10n/app_localizations.dart';
+import 'package:erumind/services/audio_service.dart';
 import 'package:erumind/services/storage_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -49,6 +50,7 @@ void main() {
         overrides: [
           questionRepositoryProvider.overrideWithValue(_FakeRepo()),
           storageServiceProvider.overrideWithValue(storage),
+          audioServiceProvider.overrideWithValue(const NoopAudioService()),
           // Long question timer so it never fires mid-test (we drive with timed
           // pumps, not pumpAndSettle, which would run the countdown to the end).
           questionDurationProvider

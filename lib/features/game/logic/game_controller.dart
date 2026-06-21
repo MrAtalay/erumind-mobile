@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../data/models/answer_result.dart';
@@ -6,6 +8,7 @@ import '../../../data/repositories/local_question_repository.dart';
 import '../../../data/repositories/question_repository.dart';
 import '../../../features/lives/logic/lives_controller.dart';
 import '../../../features/mastery/logic/crowns.dart';
+import '../../../services/audio_service.dart';
 import '../../../services/storage_service.dart';
 import 'game_state.dart';
 import 'scoring.dart';
@@ -28,25 +31,26 @@ final categoriesProvider = FutureProvider<List<Category>>((ref) {
 final questionDurationProvider =
     Provider<Duration>((ref) => const Duration(seconds: 12));
 
-/// Drives a "Momentum" run: spin the wheel for a category, answer one question,
-/// then bank the pot or risk it for a bigger multiplier. A wrong answer loses
-/// the unbanked pot and ends the run; the banked total is the final score.
+/// Drives a "Momentum" session: spin the wheel for a category, answer one
+/// question, then bank the pot or risk it for a bigger multiplier. A wrong
+/// answer costs one life but keeps the pot and banked total intact; the
+/// session only ends — banking whatever's left — once lives run out (or the
+/// player voluntarily finishes).
 class GameController extends AsyncNotifier<GameState> {
   QuestionRepository get _repo => ref.read(questionRepositoryProvider);
   StorageService get _storage => ref.read(storageServiceProvider);
+  AudioService get _audio => ref.read(audioServiceProvider);
 
-  /// Questions already asked this run, so a run doesn't repeat one.
+  /// Questions already asked this session, so it doesn't repeat one.
   final Set<String> _asked = {};
 
   @override
   Future<GameState> build() async => const GameState.lobby();
 
-  /// Spends one life and begins a run at the wheel. Returns false (state
-  /// untouched) when no life is available.
+  /// Begins a session at the wheel. Returns false (state untouched) when no
+  /// life is available — lives are only spent on a wrong answer, not here.
   Future<bool> start() async {
     if (!ref.read(livesControllerProvider).canPlay) return false;
-    final consumed = await ref.read(livesControllerProvider.notifier).consumeLife();
-    if (!consumed) return false;
 
     _asked.clear();
     state = const AsyncData(GameState(phase: RunPhase.spinning));
@@ -102,6 +106,7 @@ class GameController extends AsyncNotifier<GameState> {
       final newCrowns = justEarnedCrown
           ? [...current.newCrowns, category.name]
           : current.newCrowns;
+      unawaited(_audio.play(justEarnedCrown ? SoundEffect.crown : SoundEffect.correct));
 
       state = AsyncData(current.copyWith(
         phase: RunPhase.decision,
@@ -113,33 +118,50 @@ class GameController extends AsyncNotifier<GameState> {
         newCrowns: newCrowns,
       ));
     } else {
-      // Wrong: the unbanked pot is lost and the run is over (shown on decision).
+      // Wrong: costs one life. The pot and banked total are untouched; only
+      // the streak (multiplier) breaks. The session ends only once lives
+      // run out (checked on the decision screen).
+      unawaited(_audio.play(SoundEffect.wrong));
+      await ref.read(livesControllerProvider.notifier).consumeLife();
       state = AsyncData(current.copyWith(
         phase: RunPhase.decision,
         selectedIndex: selectedIndex,
         lastResult: result,
-        pot: 0,
+        multiplierStep: 0,
       ));
     }
   }
 
-  /// The question's timer ran out: treated as a wrong answer (lose the pot, end
-  /// the run). No-op if the question was already answered.
-  void timeUp() {
+  /// The question's timer ran out: treated the same as a wrong answer (costs
+  /// one life, breaks the streak). No-op if the question was already answered.
+  Future<void> timeUp() async {
     final current = state.value;
     if (current == null ||
         current.phase != RunPhase.question ||
         current.question == null) {
       return;
     }
+    unawaited(_audio.play(SoundEffect.wrong));
+    await ref.read(livesControllerProvider.notifier).consumeLife();
     state = AsyncData(current.copyWith(
       phase: RunPhase.decision,
-      pot: 0,
+      multiplierStep: 0,
       lastResult: AnswerResult(
         isCorrect: false,
         correctIndex: current.question!.correctIndex ?? -1,
       ),
     ));
+  }
+
+  /// Continues to a fresh spin after a wrong answer that didn't cost the
+  /// last life. No-op if the last answer was correct or lives have run out
+  /// (the player must use [endRun] instead).
+  void continueAfterWrong() {
+    final s = state.value;
+    if (s == null || s.phase != RunPhase.decision) return;
+    if (s.lastResult?.isCorrect ?? true) return;
+    if (!ref.read(livesControllerProvider).canPlay) return;
+    state = AsyncData(s.copyWith(phase: RunPhase.spinning, clearQuestion: true));
   }
 
   /// Secures the pot, resets the multiplier, and spins again. Only valid after
@@ -167,8 +189,9 @@ class GameController extends AsyncNotifier<GameState> {
     ));
   }
 
-  /// Ends the run: banks any remaining pot and records the score. Used both by
-  /// "Finish" (after a correct answer) and "See results" (after a wrong one).
+  /// Ends the session: banks any remaining pot and records the score. Used
+  /// both by "Finish" (voluntarily, after a correct answer) and "See results"
+  /// (after a wrong answer that left no lives).
   Future<void> endRun() async {
     final s = state.value;
     if (s == null || s.phase != RunPhase.decision) return;

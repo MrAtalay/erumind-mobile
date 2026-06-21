@@ -30,6 +30,11 @@ turn-based "duello" multiplayer**.
 - Tests: `flutter_test`. Prioritize unit tests for scoring & answer validation.
 - **Deferred until needed (Phase 3):** local storage. Decision: use **`hive_ce`** (the
   maintained community fork) instead of the original `hive`. Not added yet.
+- Audio: `audioplayers ^6.1.0` (Phase 5 audio slice). SFX assets at `assets/audio/*.wav`
+  are placeholder silence — drop real clips in with the same filenames, no code change.
+- App icon/splash: `flutter_launcher_icons ^0.14.3` + `flutter_native_splash ^2.4.6`
+  (dev-only, Phase 5). Source logo at `assets/icon/icon.png`. After replacing the logo,
+  re-run `dart run flutter_launcher_icons` then `dart run flutter_native_splash:create`.
 - LATER (online): firebase_core/auth/firestore/functions/remote_config/crashlytics.
 - LATER (money): google_mobile_ads, in_app_purchase. LATER (social): games_services.
 
@@ -81,7 +86,24 @@ lib/
 - Phase 2 — Wheel + 6 categories + crowns.
 - Phase 3 — Lives/energy, scoring, local persistence (hive_ce), round summary.
 - Phase 4 — Menu, settings (sound, TR/EN), go_router, audio, pause.
-- Phase 5 — Polish/juice → SP MVP to Google Play closed testing.
+- **Phase 5 — Polish/juice: DONE** → next up is the SP MVP submission to Google Play closed
+  testing. Shipped this phase:
+  - Countdown timer per question.
+  - Sound effects (correct/wrong/spin/crown) wired up with a settings toggle; placeholder
+    SFX assets at `assets/audio/*.wav` pending real audio (drop in same filenames).
+  - App icon + native splash (logo at `assets/icon/icon.png`, generated via
+    `flutter_launcher_icons` / `flutter_native_splash`), verified on the Android emulator.
+  - First-launch onboarding (3-page walkthrough of the Momentum loop), gating the '/' route
+    until completed or skipped (`onboardingSeenProvider`, `StorageService.hasSeenOnboarding`).
+  - **Lives reworked from a per-run cost to a per-mistake cost (2026-06-21 decision):** a
+    wrong answer (or timeout) no longer ends the session — it costs one life, resets the
+    streak multiplier, but leaves the pot and banked total untouched, and the player taps
+    "Continue" to keep going. The session only ends (banking what's left) once lives hit 0,
+    or the player voluntarily taps "Finish"/"See results". `GameController.start()` no longer
+    spends a life; `answer()`/`timeUp()` do, via `livesControllerProvider.notifier.consumeLife()`.
+    Note: the lives gate (and thus this cost) is disabled in debug builds (`kReleaseMode`
+    check in `livesEnabledProvider`) — test the heart count on a release build or with
+    `livesEnabledProvider` overridden, not a debug run.
 - Phase 6 — Firebase foundation + server-side validation.
 - Phase 7 — Async duello + leaderboard. Phase 8 — AdMob + IAP.
 

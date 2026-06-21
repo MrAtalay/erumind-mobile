@@ -38,6 +38,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get languageTurkish => 'Türkçe';
 
   @override
+  String get settingsSound => 'Sound';
+
+  @override
   String get lobbyReady => 'Ready to play?';
 
   @override
@@ -108,10 +111,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get finish => 'Finish';
 
   @override
-  String get runOver => 'Wrong — run over';
+  String get wrongAnswer => 'Wrong!';
 
   @override
-  String get timeUp => 'Time\'s up — run over';
+  String get timeUp => 'Time\'s up!';
+
+  @override
+  String get gameOverNoLives => 'Out of lives — game over';
+
+  @override
+  String get continuePlaying => 'Continue';
 
   @override
   String correctAnswers(int count) {
@@ -127,4 +136,34 @@ class AppLocalizationsEn extends AppLocalizations {
   String newCrown(String category) {
     return 'New crown: $category!';
   }
+
+  @override
+  String get onboardingTitle1 => 'Spin the wheel';
+
+  @override
+  String get onboardingBody1 =>
+      'Each round starts with a spin. Wherever it lands, that\'s your next question\'s category.';
+
+  @override
+  String get onboardingTitle2 => 'Answer to grow your pot';
+
+  @override
+  String get onboardingBody2 =>
+      'A correct answer adds points to your pot — keep a streak going and the multiplier climbs.';
+
+  @override
+  String get onboardingTitle3 => 'Bank it or risk it';
+
+  @override
+  String get onboardingBody3 =>
+      'Bank your pot to keep it safe, or risk it for an even bigger multiplier. A wrong answer costs a life, not your pot — the game only ends when your lives run out.';
+
+  @override
+  String get onboardingSkip => 'Skip';
+
+  @override
+  String get onboardingNext => 'Next';
+
+  @override
+  String get onboardingGetStarted => 'Get started';
 }

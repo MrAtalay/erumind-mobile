@@ -15,11 +15,15 @@ class CategoryWheel extends StatefulWidget {
     required this.categories,
     required this.onSelected,
     required this.spinLabel,
+    this.onSpinStart,
   });
 
   final List<Category> categories;
   final void Function(Category category) onSelected;
   final String spinLabel;
+
+  /// Called right as a spin begins (before the wheel animates).
+  final VoidCallback? onSpinStart;
 
   @override
   State<CategoryWheel> createState() => _CategoryWheelState();
@@ -45,6 +49,7 @@ class _CategoryWheelState extends State<CategoryWheel>
 
   void _spin() {
     if (_controller.isAnimating) return;
+    widget.onSpinStart?.call();
 
     final count = widget.categories.length;
     final sweep = 2 * math.pi / count;

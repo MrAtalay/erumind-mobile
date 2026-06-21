@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../l10n/app_localizations.dart';
+import '../../../services/audio_service.dart';
 import '../../lives/logic/lives_controller.dart';
 import '../logic/game_controller.dart';
 import '../logic/game_state.dart';
@@ -221,6 +224,8 @@ class _SpinningView extends ConsumerWidget {
                         categories: categories,
                         spinLabel: l10n.spin,
                         onSelected: controller.onCategorySelected,
+                        onSpinStart: () =>
+                            ref.read(audioServiceProvider).play(SoundEffect.spin),
                       ),
                     ),
                   ],
@@ -288,7 +293,7 @@ class _PlayfieldView extends ConsumerWidget {
                     const SizedBox(height: 12),
                   ],
                   const SizedBox(height: 12),
-                  if (answered) _decisionControls(context, l10n, controller),
+                  if (answered) _decisionControls(context, ref, l10n, controller),
                 ],
               ),
             ),
@@ -300,13 +305,17 @@ class _PlayfieldView extends ConsumerWidget {
 
   Widget _decisionControls(
     BuildContext context,
+    WidgetRef ref,
     AppLocalizations l10n,
     GameController controller,
   ) {
     final correct = state.lastResult?.isCorrect ?? false;
     if (!correct) {
+      final livesLeft = ref.watch(livesControllerProvider).lives;
       // No selection means the timer ran out rather than a wrong tap.
-      final message = state.selectedIndex == null ? l10n.timeUp : l10n.runOver;
+      final message = livesLeft > 0
+          ? (state.selectedIndex == null ? l10n.timeUp : l10n.wrongAnswer)
+          : l10n.gameOverNoLives;
       return Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -317,8 +326,8 @@ class _PlayfieldView extends ConsumerWidget {
                   ?.copyWith(color: Colors.red.shade700)),
           const SizedBox(height: 12),
           FilledButton(
-            onPressed: controller.endRun,
-            child: Text(l10n.seeResults),
+            onPressed: livesLeft > 0 ? controller.continueAfterWrong : controller.endRun,
+            child: Text(livesLeft > 0 ? l10n.continuePlaying : l10n.seeResults),
           ),
         ],
       );
@@ -381,7 +390,7 @@ class _QuestionTimerState extends ConsumerState<_QuestionTimer>
     )
       ..addStatusListener((status) {
         if (status == AnimationStatus.completed) {
-          ref.read(gameControllerProvider.notifier).timeUp();
+          unawaited(ref.read(gameControllerProvider.notifier).timeUp());
         }
       })
       ..forward();

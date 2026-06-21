@@ -11,6 +11,8 @@ void main() {
   late StorageService storage;
   setUp(() async {
     storage = await setUpTempStorage();
+    // These tests cover the menu/settings, not onboarding — skip past it.
+    await storage.saveOnboardingSeen(true);
   });
 
   testWidgets('menu opens first and Play navigates to the game lobby',

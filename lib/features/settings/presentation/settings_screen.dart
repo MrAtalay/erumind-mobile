@@ -4,8 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../l10n/app_localizations.dart';
 import '../logic/settings_controller.dart';
 
-/// Settings screen. Phase 4 slice 2: UI language (TR/EN). Sound lands with the
-/// audio slice.
+/// Settings screen. Phase 4 slice 2: UI language (TR/EN). Phase 5: sound on/off.
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
@@ -14,6 +13,7 @@ class SettingsScreen extends ConsumerWidget {
     final l10n = AppLocalizations.of(context)!;
     final selected = ref.watch(settingsControllerProvider)?.languageCode;
     final controller = ref.read(settingsControllerProvider.notifier);
+    final soundEnabled = ref.watch(soundEnabledProvider);
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.settings)),
@@ -42,6 +42,12 @@ class SettingsScreen extends ConsumerWidget {
                 ),
               ],
             ),
+          ),
+          SwitchListTile(
+            title: Text(l10n.settingsSound),
+            value: soundEnabled,
+            onChanged: (enabled) =>
+                ref.read(soundEnabledProvider.notifier).setEnabled(enabled),
           ),
         ],
       ),

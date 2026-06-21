@@ -11,6 +11,7 @@
   "settingsLanguage": "Dil",
   "languageEnglish": "English",
   "languageTurkish": "Türkçe",
+  "settingsSound": "Ses",
 
   "lobbyReady": "Oynamaya hazır mısın?",
   "outOfLives": "Can kalmadı",
@@ -33,9 +34,21 @@
   "bank": "Bankala",
   "riskIt": "Risk et",
   "finish": "Bitir",
-  "runOver": "Yanlış — koşu bitti",
-  "timeUp": "Süre doldu — koşu bitti",
+  "wrongAnswer": "Yanlış!",
+  "timeUp": "Süre doldu!",
+  "gameOverNoLives": "Canın kalmadı — oyun bitti",
+  "continuePlaying": "Devam et",
   "correctAnswers": "Doğru cevap: {count}",
   "crownsProgress": "Taçlar: {earned} / {total}",
-  "newCrown": "Yeni taç: {category}!"
+  "newCrown": "Yeni taç: {category}!",
+
+  "onboardingTitle1": "Çarkı çevir",
+  "onboardingBody1": "Her tur bir çevirmeyle başlar. Çark nereye düşerse, sıradaki sorunun kategorisi o olur.",
+  "onboardingTitle2": "Doğru cevapla potunu büyüt",
+  "onboardingBody2": "Doğru cevap potuna puan ekler — art arda doğru cevapladıkça çarpan büyür.",
+  "onboardingTitle3": "Bankala ya da riske at",
+  "onboardingBody3": "Potunu bankalayarak güvene al, ya da daha büyük bir çarpan için riske at. Yanlış cevap potunu değil, bir canını alır — oyun ancak canların biterse sona erer.",
+  "onboardingSkip": "Geç",
+  "onboardingNext": "İleri",
+  "onboardingGetStarted": "Başlayalım"
 }

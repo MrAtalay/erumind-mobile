@@ -14,6 +14,7 @@
   "settingsLanguage": "Language",
   "languageEnglish": "English",
   "languageTurkish": "Türkçe",
+  "settingsSound": "Sound",
 
   "lobbyReady": "Ready to play?",
   "outOfLives": "Out of lives",
@@ -60,8 +61,10 @@
   "bank": "Bank",
   "riskIt": "Risk it",
   "finish": "Finish",
-  "runOver": "Wrong — run over",
-  "timeUp": "Time's up — run over",
+  "wrongAnswer": "Wrong!",
+  "timeUp": "Time's up!",
+  "gameOverNoLives": "Out of lives — game over",
+  "continuePlaying": "Continue",
   "correctAnswers": "Correct answers: {count}",
   "@correctAnswers": {
     "placeholders": { "count": { "type": "int" } }
@@ -73,5 +76,15 @@
   "newCrown": "New crown: {category}!",
   "@newCrown": {
     "placeholders": { "category": { "type": "String" } }
-  }
+  },
+
+  "onboardingTitle1": "Spin the wheel",
+  "onboardingBody1": "Each round starts with a spin. Wherever it lands, that's your next question's category.",
+  "onboardingTitle2": "Answer to grow your pot",
+  "onboardingBody2": "A correct answer adds points to your pot — keep a streak going and the multiplier climbs.",
+  "onboardingTitle3": "Bank it or risk it",
+  "onboardingBody3": "Bank your pot to keep it safe, or risk it for an even bigger multiplier. A wrong answer costs a life, not your pot — the game only ends when your lives run out.",
+  "onboardingSkip": "Skip",
+  "onboardingNext": "Next",
+  "onboardingGetStarted": "Get started"
 }

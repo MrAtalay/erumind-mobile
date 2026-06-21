@@ -15,6 +15,8 @@ abstract class StorageService {
   static const String _livesKey = 'lives';
   static const String _refillAnchorKey = 'lives_refill_anchor_ms';
   static const String _localeKey = 'locale_code';
+  static const String _soundEnabledKey = 'sound_enabled';
+  static const String _onboardingSeenKey = 'onboarding_seen';
   static const String _masteryPrefix = 'mastery_';
 
   @protected
@@ -79,6 +81,21 @@ abstract class StorageService {
       await writeValue(_localeKey, code);
     }
   }
+
+  /// Whether sound effects are on. Defaults to true (never set yet).
+  bool get soundEnabled => (readValue(_soundEnabledKey) as bool?) ?? true;
+
+  /// Persists the sound on/off setting.
+  Future<void> saveSoundEnabled(bool enabled) =>
+      writeValue(_soundEnabledKey, enabled);
+
+  /// Whether the player has been through the first-launch onboarding.
+  bool get hasSeenOnboarding =>
+      (readValue(_onboardingSeenKey) as bool?) ?? false;
+
+  /// Persists that onboarding has been completed (or skipped).
+  Future<void> saveOnboardingSeen(bool seen) =>
+      writeValue(_onboardingSeenKey, seen);
 
   /// How many questions the player has answered correctly in [categoryId]
   /// across all runs (drives crown progress). 0 if none yet.

@@ -152,6 +152,12 @@ abstract class AppLocalizations {
   /// **'Türkçe'**
   String get languageTurkish;
 
+  /// No description provided for @settingsSound.
+  ///
+  /// In en, this message translates to:
+  /// **'Sound'**
+  String get settingsSound;
+
   /// No description provided for @lobbyReady.
   ///
   /// In en, this message translates to:
@@ -260,17 +266,29 @@ abstract class AppLocalizations {
   /// **'Finish'**
   String get finish;
 
-  /// No description provided for @runOver.
+  /// No description provided for @wrongAnswer.
   ///
   /// In en, this message translates to:
-  /// **'Wrong — run over'**
-  String get runOver;
+  /// **'Wrong!'**
+  String get wrongAnswer;
 
   /// No description provided for @timeUp.
   ///
   /// In en, this message translates to:
-  /// **'Time\'s up — run over'**
+  /// **'Time\'s up!'**
   String get timeUp;
+
+  /// No description provided for @gameOverNoLives.
+  ///
+  /// In en, this message translates to:
+  /// **'Out of lives — game over'**
+  String get gameOverNoLives;
+
+  /// No description provided for @continuePlaying.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get continuePlaying;
 
   /// No description provided for @correctAnswers.
   ///
@@ -289,6 +307,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'New crown: {category}!'**
   String newCrown(String category);
+
+  /// No description provided for @onboardingTitle1.
+  ///
+  /// In en, this message translates to:
+  /// **'Spin the wheel'**
+  String get onboardingTitle1;
+
+  /// No description provided for @onboardingBody1.
+  ///
+  /// In en, this message translates to:
+  /// **'Each round starts with a spin. Wherever it lands, that\'s your next question\'s category.'**
+  String get onboardingBody1;
+
+  /// No description provided for @onboardingTitle2.
+  ///
+  /// In en, this message translates to:
+  /// **'Answer to grow your pot'**
+  String get onboardingTitle2;
+
+  /// No description provided for @onboardingBody2.
+  ///
+  /// In en, this message translates to:
+  /// **'A correct answer adds points to your pot — keep a streak going and the multiplier climbs.'**
+  String get onboardingBody2;
+
+  /// No description provided for @onboardingTitle3.
+  ///
+  /// In en, this message translates to:
+  /// **'Bank it or risk it'**
+  String get onboardingTitle3;
+
+  /// No description provided for @onboardingBody3.
+  ///
+  /// In en, this message translates to:
+  /// **'Bank your pot to keep it safe, or risk it for an even bigger multiplier. A wrong answer costs a life, not your pot — the game only ends when your lives run out.'**
+  String get onboardingBody3;
+
+  /// No description provided for @onboardingSkip.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip'**
+  String get onboardingSkip;
+
+  /// No description provided for @onboardingNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get onboardingNext;
+
+  /// No description provided for @onboardingGetStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Get started'**
+  String get onboardingGetStarted;
 }
 
 class _AppLocalizationsDelegate
