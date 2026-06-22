@@ -1,0 +1,9 @@
+{
+  "name": "seed-firestore",
+  "private": true,
+  "version": "1.0.0",
+  "description": "One-off admin script: pushes assets/questions.json into Firestore.",
+  "dependencies": {
+    "firebase-admin": "^13.0.0"
+  }
+}

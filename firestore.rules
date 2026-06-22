@@ -14,7 +14,10 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // Deny everything else by default.
+    // `answers/{questionId}` (correctIndex) and everything else is denied by
+    // this catch-all — clients never see correct answers, by construction.
+    // Only admin-credentialed scripts (seed.js) or, later, Cloud Functions
+    // can read/write it.
     match /{document=**} {
       allow read, write: if false;
     }

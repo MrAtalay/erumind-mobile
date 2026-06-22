@@ -124,9 +124,20 @@ lib/
   runs in `main()`. Firestore database created (region `eur3`) with rules deployed
   (`categories`/`questions` public-read/no-write, everything else denied).
   `FirestoreQuestionRepository` added but **not wired in** — `questionRepositoryProvider`
-  still points at `LocalQuestionRepository`. Still open: seed real category/question data
-  into Firestore (without `correctIndex` — that must live server-side once Functions exist),
-  Cloud Function for server-side `checkAnswer`, Auth, switch the provider over.
+  still points at `LocalQuestionRepository`.
+  **Data seeded (2026-06-22):** the (now Turkish) `assets/questions.json` content is live in
+  Firestore — `categories` and `questions` (no `correctIndex`), plus a separate, fully-locked
+  `answers/{questionId}` collection (`{correctIndex}`) for the future Cloud Function to read.
+  Verified with a public unauthenticated read: `categories` succeeds, `answers` returns 403.
+  Seeded via `tool/seed-firestore/seed.js` (Node + `firebase-admin`, run with a service
+  account key — **never commit the key**; re-run after editing `questions.json` to resync).
+  Still open: Cloud Function for server-side `checkAnswer` (reads `answers/{id}`, compares,
+  returns the result — the client must never read that collection directly), Auth, switch
+  `questionRepositoryProvider` over once both exist.
+- **Content language: Turkish.** `assets/questions.json` (all categories + 60 questions) was
+  translated to Turkish (2026-06-22) — the game's content is Turkish-first. The TR/EN UI
+  toggle (Phase 4) still exists for chrome strings, but quiz content itself is Turkish-only
+  for now; there's no per-locale question set.
 - Phase 7 — Async duello + leaderboard. Phase 8 — AdMob + IAP.
 
 ## 6b. Lessons & pitfalls (read before persistence/services/widget tests)
@@ -180,5 +191,7 @@ flutter run -d emulator-5554         # run on the emulator
 flutter emulators --launch erumind_pixel
 firebase deploy --only firestore:rules   # after editing firestore.rules
 flutterfire configure                     # re-run after adding a new platform (iOS, etc.)
+cd tool/seed-firestore && npm install && node seed.js <path-to-service-account-key.json>
+                                           # resync Firestore after editing assets/questions.json
 ```
 Run codegen after editing any freezed/json model.
