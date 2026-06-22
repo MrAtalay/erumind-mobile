@@ -42,7 +42,16 @@ turn-based "duello" multiplayer**.
   (protected by Firestore rules, not by hiding them). `firebase.json` / `.firebaserc` /
   `firestore.rules` / `firestore.indexes.json` added at the repo root.
   `Firebase.initializeApp()` runs in `main()` but nothing reads from Firestore yet.
-- LATER (online, continued): auth/functions/remote_config/crashlytics.
+- Online foundation (Phase 6, continued): `firebase_auth ^6.5.3` + `cloud_functions ^6.3.3`.
+  Anonymous sign-in runs in `main()` (every device gets a stable Firebase UID, no sign-in
+  screen). Cloud Functions source lives in `functions/` (Node 20, plain JS,
+  `firebase-admin`/`firebase-functions`) — `checkAnswer` reads the locked
+  `answers/{questionId}` collection and validates server-side. **Written but not deployed**:
+  deploying needs the Blaze (pay-as-you-go) plan, which is a billing decision the team is
+  holding off on. `FirestoreQuestionRepository.checkAnswer()` already calls it via
+  `cloud_functions`, so it'll work the moment it's deployed — `firebase deploy --only
+  functions` from the repo root once Blaze is on.
+- LATER (online, continued): remote_config/crashlytics.
 - LATER (money): google_mobile_ads, in_app_purchase. LATER (social): games_services.
 
 > freezed 3.x requires `abstract class X with _$X` (not plain `class`).
@@ -131,9 +140,18 @@ lib/
   Verified with a public unauthenticated read: `categories` succeeds, `answers` returns 403.
   Seeded via `tool/seed-firestore/seed.js` (Node + `firebase-admin`, run with a service
   account key — **never commit the key**; re-run after editing `questions.json` to resync).
-  Still open: Cloud Function for server-side `checkAnswer` (reads `answers/{id}`, compares,
-  returns the result — the client must never read that collection directly), Auth, switch
-  `questionRepositoryProvider` over once both exist.
+  **Auth + Functions (2026-06-22):** anonymous sign-in wired up in `main()` (verified —
+  `firebase auth:export` shows real anonymous users after a device run). `checkAnswer` Cloud
+  Function written (`functions/index.js`) and `FirestoreQuestionRepository.checkAnswer()`
+  calls it — but the function **isn't deployed**, since that needs the Blaze plan (a billing
+  decision the team is deliberately holding off on). Verified locally with the Functions
+  emulator (loads and initializes cleanly) instead.
+  Still open: deploy the function once Blaze is on, then switch `questionRepositoryProvider`
+  over to `FirestoreQuestionRepository`.
+- **Two Firebase projects exist on this Google account:** `erumind-app` (this repo's, in
+  active use) and `erumind` (`erumind-74efd`, origin unclear — possibly Eray's own
+  exploration). Not yet reconciled; `erumind-app` is the one wired into the app and should
+  stay the source of truth until the team explicitly says otherwise.
 - **Content language: Turkish.** `assets/questions.json` (all categories + 60 questions) was
   translated to Turkish (2026-06-22) — the game's content is Turkish-first. The TR/EN UI
   toggle (Phase 4) still exists for chrome strings, but quiz content itself is Turkish-only
@@ -190,6 +208,8 @@ flutter test
 flutter run -d emulator-5554         # run on the emulator
 flutter emulators --launch erumind_pixel
 firebase deploy --only firestore:rules   # after editing firestore.rules
+firebase emulators:start --only functions    # smoke-test functions/ locally, no Blaze needed
+firebase deploy --only functions             # needs the Blaze plan — not done yet, see Phase 6
 flutterfire configure                     # re-run after adding a new platform (iOS, etc.)
 cd tool/seed-firestore && npm install && node seed.js <path-to-service-account-key.json>
                                            # resync Firestore after editing assets/questions.json

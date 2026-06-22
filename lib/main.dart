@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,10 +12,17 @@ Future<void> main() async {
   // Needed because we touch platform channels (Hive's path) before runApp.
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Firebase foundation (Phase 6, first slice): connects the app to the
-  // erumind-app project. Nothing reads from it yet — FirestoreQuestionRepository
+  // Firebase foundation (Phase 6): connects the app to the erumind-app
+  // project. Nothing reads from Firestore yet — FirestoreQuestionRepository
   // isn't wired into questionRepositoryProvider until MP lands.
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // Anonymous auth gives every device a stable Firebase UID (needed by the
+  // checkAnswer Cloud Function, and later by duello/leaderboard) without a
+  // sign-in screen. Skipped if a session already exists.
+  if (FirebaseAuth.instance.currentUser == null) {
+    await FirebaseAuth.instance.signInAnonymously();
+  }
 
   // Open local storage once, up front, then inject the ready instance so the
   // rest of the app can read it synchronously through Riverpod.

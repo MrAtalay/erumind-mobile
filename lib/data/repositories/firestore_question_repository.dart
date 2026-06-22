@@ -1,25 +1,31 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 
 import '../models/answer_result.dart';
 import '../models/category.dart';
 import '../models/question.dart';
 import 'question_repository.dart';
 
-/// Multiplayer [QuestionRepository] backed by Firestore (Phase 6, first
-/// slice — connection + read-side plumbing only).
+/// Multiplayer [QuestionRepository] backed by Firestore (Phase 6).
 ///
 /// Not wired into `questionRepositoryProvider` yet; single-player still runs
 /// on [LocalQuestionRepository]. Per Hard rule #1, Firestore question
 /// documents never carry `correctIndex` — [getQuestions] strips it even if a
-/// document has one by mistake, and [checkAnswer] has nothing to validate
-/// against locally. Answer validation here waits on the server-side Cloud
-/// Function (Phase 6, continued); calling it now is a clear signal that
-/// piece isn't built yet rather than a silent insecure fallback.
+/// document has one by mistake. [checkAnswer] calls the `checkAnswer` Cloud
+/// Function (`functions/index.js`), which is the only thing with admin
+/// access to the locked `answers/{questionId}` collection. The function is
+/// written but **not deployed yet** — deploying requires the Firebase
+/// project to be on the Blaze plan, which is a billing decision left to the
+/// team, not something to flip on automatically.
 class FirestoreQuestionRepository implements QuestionRepository {
-  FirestoreQuestionRepository({FirebaseFirestore? firestore})
-      : _db = firestore ?? FirebaseFirestore.instance;
+  FirestoreQuestionRepository({
+    FirebaseFirestore? firestore,
+    FirebaseFunctions? functions,
+  })  : _db = firestore ?? FirebaseFirestore.instance,
+        _functions = functions ?? FirebaseFunctions.instance;
 
   final FirebaseFirestore _db;
+  final FirebaseFunctions _functions;
 
   @override
   Future<List<Category>> getCategories() async {
@@ -50,11 +56,15 @@ class FirestoreQuestionRepository implements QuestionRepository {
   Future<AnswerResult> checkAnswer({
     required String questionId,
     required int selectedIndex,
-  }) {
-    throw UnimplementedError(
-      'FirestoreQuestionRepository.checkAnswer needs the server-side Cloud '
-      'Function (Phase 6, continued) — MP answers must be validated there, '
-      'never on the client.',
+  }) async {
+    final callable = _functions.httpsCallable('checkAnswer');
+    final response = await callable.call<Map<String, dynamic>>({
+      'questionId': questionId,
+      'selectedIndex': selectedIndex,
+    });
+    return AnswerResult(
+      isCorrect: response.data['isCorrect'] as bool,
+      correctIndex: response.data['correctIndex'] as int,
     );
   }
 }
