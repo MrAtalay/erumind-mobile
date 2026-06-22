@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "236932152090",
+    "project_id": "erumind-app",
+    "storage_bucket": "erumind-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:236932152090:android:8d29cccd1b43aa66f80aa3",
+        "android_client_info": {
+          "package_name": "com.erumind.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDJx2N_KdxU6HIFqzPZg03K4llhwg3VUHw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

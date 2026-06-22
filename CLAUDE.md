@@ -35,7 +35,14 @@ turn-based "duello" multiplayer**.
 - App icon/splash: `flutter_launcher_icons ^0.14.3` + `flutter_native_splash ^2.4.6`
   (dev-only, Phase 5). Source logo at `assets/icon/icon.png`. After replacing the logo,
   re-run `dart run flutter_launcher_icons` then `dart run flutter_native_splash:create`.
-- LATER (online): firebase_core/auth/firestore/functions/remote_config/crashlytics.
+- Online foundation (Phase 6, first slice): `firebase_core ^4.11.0` + `cloud_firestore
+  ^6.6.0`. Firebase project **`erumind-app`** (console: console.firebase.google.com/project/erumind-app).
+  Android app registered via `flutterfire configure`; `lib/firebase_options.dart` and
+  `android/app/google-services.json` are committed — these are client config, not secrets
+  (protected by Firestore rules, not by hiding them). `firebase.json` / `.firebaserc` /
+  `firestore.rules` / `firestore.indexes.json` added at the repo root.
+  `Firebase.initializeApp()` runs in `main()` but nothing reads from Firestore yet.
+- LATER (online, continued): auth/functions/remote_config/crashlytics.
 - LATER (money): google_mobile_ads, in_app_purchase. LATER (social): games_services.
 
 > freezed 3.x requires `abstract class X with _$X` (not plain `class`).
@@ -45,7 +52,11 @@ turn-based "duello" multiplayer**.
 **One mode-agnostic game core.** All question data sits behind the
 **`QuestionRepository` interface** (`lib/data/repositories/question_repository.dart`):
 - SP → `LocalQuestionRepository` (bundled `assets/questions.json`).
-- MP → `FirestoreQuestionRepository` (later; **server-side answer validation**).
+- MP → `FirestoreQuestionRepository` (`lib/data/repositories/firestore_question_repository.dart`,
+  added Phase 6 — reads `categories`/`questions` collections, **not wired into
+  `questionRepositoryProvider` yet**. `checkAnswer` deliberately throws
+  `UnimplementedError`: the Cloud Function that validates MP answers server-side hasn't
+  been built, and Firestore questions never carry `correctIndex` in the first place).
 
 The game core depends only on the interface. Swapping SP↔MP is a one-line change in
 `questionRepositoryProvider`. **Answer checking goes through `checkAnswer(...)`**, never by
@@ -76,7 +87,10 @@ lib/
 2. **Original content & branding only.**
 3. **Build the core game loop (vertical slice) first**, before menus/settings.
 4. **Committed to Flutter.** No engine switching.
-5. **No secrets in the repo.** Firebase config/keys come later via proper config + .gitignore.
+5. **No secrets in the repo.** `firebase_options.dart` / `google-services.json` are client
+   config (not secrets) and are committed by design — protected by Firestore rules, not by
+   hiding them. Actual secrets (service account keys, Functions env vars) still never go in
+   the repo.
 
 ## 6. Roadmap & status
 - **Phase 0 — Skeleton: DONE.** Models, repository interface + local impl, 15 original seed
@@ -104,7 +118,15 @@ lib/
     Note: the lives gate (and thus this cost) is disabled in debug builds (`kReleaseMode`
     check in `livesEnabledProvider`) — test the heart count on a release build or with
     `livesEnabledProvider` overridden, not a debug run.
-- Phase 6 — Firebase foundation + server-side validation.
+- **Phase 6 — Firebase foundation + server-side validation: IN PROGRESS.** First slice done
+  (2026-06-22): Firebase project `erumind-app` created, Android app registered via
+  `flutterfire configure`, `firebase_core` + `cloud_firestore` added, `Firebase.initializeApp()`
+  runs in `main()`. Firestore database created (region `eur3`) with rules deployed
+  (`categories`/`questions` public-read/no-write, everything else denied).
+  `FirestoreQuestionRepository` added but **not wired in** — `questionRepositoryProvider`
+  still points at `LocalQuestionRepository`. Still open: seed real category/question data
+  into Firestore (without `correctIndex` — that must live server-side once Functions exist),
+  Cloud Function for server-side `checkAnswer`, Auth, switch the provider over.
 - Phase 7 — Async duello + leaderboard. Phase 8 — AdMob + IAP.
 
 ## 6b. Lessons & pitfalls (read before persistence/services/widget tests)
@@ -142,6 +164,10 @@ See **`docs/lessons-and-pitfalls.md`** for the full log. The expensive ones so f
 - JDK 17: Android Studio's bundled JBR. `JAVA_HOME` = `C:\Program Files\Android\Android Studio\jbr`.
 - Emulator AVD: `erumind_pixel` (Pixel 7, Android 15 / API 35).
 - System Java is 1.8 (too old) — always rely on `JAVA_HOME` (the JBR) for Gradle.
+- Firebase CLI (`npm i -g firebase-tools`) + FlutterFire CLI (`dart pub global activate
+  flutterfire_cli`) installed (2026-06-22) for the Phase 6 setup. Logged in as
+  umutefe.demir37@gmail.com via `firebase login` (needs a real interactive terminal —
+  fails in non-TTY contexts; run it yourself if the login expires).
 
 ### Commands
 ```bash
@@ -152,5 +178,7 @@ flutter analyze
 flutter test
 flutter run -d emulator-5554         # run on the emulator
 flutter emulators --launch erumind_pixel
+firebase deploy --only firestore:rules   # after editing firestore.rules
+flutterfire configure                     # re-run after adding a new platform (iOS, etc.)
 ```
 Run codegen after editing any freezed/json model.

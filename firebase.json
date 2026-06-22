@@ -1,0 +1,25 @@
+{
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "erumind-app",
+          "appId": "1:236932152090:android:8d29cccd1b43aa66f80aa3",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "erumind-app",
+          "configurations": {
+            "android": "1:236932152090:android:8d29cccd1b43aa66f80aa3"
+          }
+        }
+      }
+    }
+  }
+}
