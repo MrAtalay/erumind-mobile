@@ -2,54 +2,54 @@
   "categories": [
     {
       "id": "science",
-      "name": "Science",
+      "name": "Bilim",
       "colorValue": 4286470082,
-      "description": "Biology, chemistry, physics and the natural world."
+      "description": "Biyoloji, kimya, fizik ve doğa bilimleri."
     },
     {
       "id": "history",
-      "name": "History",
+      "name": "Tarih",
       "colorValue": 4294278144,
-      "description": "People, events and civilizations of the past."
+      "description": "Geçmişin insanları, olayları ve medeniyetleri."
     },
     {
       "id": "geography",
-      "name": "Geography",
+      "name": "Coğrafya",
       "colorValue": 4280191205,
-      "description": "Countries, capitals, oceans and landmarks."
+      "description": "Ülkeler, başkentler, okyanuslar ve doğal oluşumlar."
     },
     {
       "id": "sports",
-      "name": "Sports",
+      "name": "Spor",
       "colorValue": 4278228616,
-      "description": "Games, rules, athletes and competitions."
+      "description": "Oyunlar, kurallar, sporcular ve yarışmalar."
     },
     {
       "id": "art",
-      "name": "Art",
+      "name": "Sanat",
       "colorValue": 4288423856,
-      "description": "Painting, sculpture, colors and techniques."
+      "description": "Resim, heykel, renkler ve teknikler."
     },
     {
       "id": "entertainment",
-      "name": "Entertainment",
+      "name": "Eğlence",
       "colorValue": 4294942720,
-      "description": "Music, film, stage and general culture."
+      "description": "Müzik, sinema, sahne ve genel kültür."
     }
   ],
   "questions": [
     {
       "id": "sci-001",
       "categoryId": "science",
-      "text": "Which gas do plants mainly take in from the air for photosynthesis?",
-      "options": ["Oxygen", "Carbon dioxide", "Nitrogen", "Hydrogen"],
+      "text": "Bitkiler fotosentez için havadan en çok hangi gazı alır?",
+      "options": ["Oksijen", "Karbondioksit", "Azot", "Hidrojen"],
       "correctIndex": 1,
       "difficulty": "easy"
     },
     {
       "id": "sci-002",
       "categoryId": "science",
-      "text": "What is the chemical symbol for the element sodium?",
+      "text": "Sodyum elementinin kimyasal sembolü nedir?",
       "options": ["So", "Sd", "Na", "Sn"],
       "correctIndex": 2,
       "difficulty": "easy"
@@ -57,7 +57,7 @@
     {
       "id": "sci-003",
       "categoryId": "science",
-      "text": "Roughly how many bones are in the adult human body?",
+      "text": "Yetişkin bir insan vücudunda yaklaşık kaç kemik vardır?",
       "options": ["206", "186", "226", "246"],
       "correctIndex": 0,
       "difficulty": "medium"
@@ -65,55 +65,55 @@
     {
       "id": "sci-004",
       "categoryId": "science",
-      "text": "Which part of a cell is often called its powerhouse?",
-      "options": ["Nucleus", "Ribosome", "Mitochondrion", "Vacuole"],
+      "text": "Hücrenin \"güç istasyonu\" olarak adlandırılan kısmı hangisidir?",
+      "options": ["Çekirdek", "Ribozom", "Mitokondri", "Koful"],
       "correctIndex": 2,
       "difficulty": "medium"
     },
     {
       "id": "sci-005",
       "categoryId": "science",
-      "text": "What is the closest planet to the Sun?",
-      "options": ["Venus", "Mercury", "Mars", "Earth"],
+      "text": "Güneş'e en yakın gezegen hangisidir?",
+      "options": ["Venüs", "Merkür", "Mars", "Dünya"],
       "correctIndex": 1,
       "difficulty": "easy"
     },
     {
       "id": "sci-006",
       "categoryId": "science",
-      "text": "What is the hardest naturally occurring substance on Earth?",
-      "options": ["Quartz", "Diamond", "Granite", "Topaz"],
+      "text": "Dünyada doğal olarak bulunan en sert madde nedir?",
+      "options": ["Kuvars", "Elmas", "Granit", "Topaz"],
       "correctIndex": 1,
       "difficulty": "easy"
     },
     {
       "id": "sci-007",
       "categoryId": "science",
-      "text": "Which gas makes up the largest share of Earth's atmosphere?",
-      "options": ["Oxygen", "Nitrogen", "Carbon dioxide", "Argon"],
+      "text": "Dünya atmosferinin en büyük bölümünü hangi gaz oluşturur?",
+      "options": ["Oksijen", "Azot", "Karbondioksit", "Argon"],
       "correctIndex": 1,
       "difficulty": "medium"
     },
     {
       "id": "sci-008",
       "categoryId": "science",
-      "text": "Which organ produces the insulin that regulates blood sugar?",
-      "options": ["Liver", "Kidney", "Pancreas", "Spleen"],
+      "text": "Kan şekerini düzenleyen insülini hangi organ üretir?",
+      "options": ["Karaciğer", "Böbrek", "Pankreas", "Dalak"],
       "correctIndex": 2,
       "difficulty": "medium"
     },
     {
       "id": "sci-009",
       "categoryId": "science",
-      "text": "What kind of animal is a Komodo dragon?",
-      "options": ["Snake", "Lizard", "Crocodile", "Turtle"],
+      "text": "Komodo ejderi ne tür bir hayvandır?",
+      "options": ["Yılan", "Kertenkele", "Timsah", "Kaplumbağa"],
       "correctIndex": 1,
       "difficulty": "easy"
     },
     {
       "id": "sci-010",
       "categoryId": "science",
-      "text": "Which scientist developed the theory of general relativity?",
+      "text": "Genel görelilik teorisini hangi bilim insanı geliştirdi?",
       "options": ["Isaac Newton", "Albert Einstein", "Niels Bohr", "Galileo Galilei"],
       "correctIndex": 1,
       "difficulty": "easy"
@@ -121,7 +121,7 @@
     {
       "id": "sci-011",
       "categoryId": "science",
-      "text": "What is the chemical formula for water?",
+      "text": "Suyun kimyasal formülü nedir?",
       "options": ["CO2", "H2O", "NaCl", "O2"],
       "correctIndex": 1,
       "difficulty": "easy"
@@ -129,15 +129,15 @@
     {
       "id": "sci-012",
       "categoryId": "science",
-      "text": "Which element is the most abundant in the Sun by volume?",
-      "options": ["Helium", "Hydrogen", "Oxygen", "Carbon"],
+      "text": "Güneş'te hacimce en bol bulunan element hangisidir?",
+      "options": ["Helyum", "Hidrojen", "Oksijen", "Karbon"],
       "correctIndex": 1,
       "difficulty": "hard"
     },
     {
       "id": "his-001",
       "categoryId": "history",
-      "text": "In which year did the Second World War end?",
+      "text": "İkinci Dünya Savaşı hangi yıl sona erdi?",
       "options": ["1943", "1945", "1948", "1950"],
       "correctIndex": 1,
       "difficulty": "easy"
@@ -145,7 +145,7 @@
     {
       "id": "his-002",
       "categoryId": "history",
-      "text": "Who was the first president of the United States?",
+      "text": "Amerika Birleşik Devletleri'nin ilk başkanı kimdir?",
       "options": ["Thomas Jefferson", "Abraham Lincoln", "George Washington", "John Adams"],
       "correctIndex": 2,
       "difficulty": "easy"
@@ -153,23 +153,23 @@
     {
       "id": "his-003",
       "categoryId": "history",
-      "text": "The Great Pyramids of Giza were built in which present-day country?",
-      "options": ["Greece", "Egypt", "Mexico", "Iraq"],
+      "text": "Giza'daki Büyük Piramitler günümüzde hangi ülkede bulunur?",
+      "options": ["Yunanistan", "Mısır", "Meksika", "Irak"],
       "correctIndex": 1,
       "difficulty": "easy"
     },
     {
       "id": "his-004",
       "categoryId": "history",
-      "text": "Constantinople was the capital of which empire?",
-      "options": ["Roman Republic", "Byzantine Empire", "Mongol Empire", "Persian Empire"],
+      "text": "Konstantinopolis hangi imparatorluğun başkentiydi?",
+      "options": ["Roma Cumhuriyeti", "Bizans İmparatorluğu", "Moğol İmparatorluğu", "Pers İmparatorluğu"],
       "correctIndex": 1,
       "difficulty": "medium"
     },
     {
       "id": "his-005",
       "categoryId": "history",
-      "text": "In Europe, the movable-type printing press is most associated with whom?",
+      "text": "Avrupa'da hareketli harfli matbaa en çok kiminle ilişkilendirilir?",
       "options": ["Johannes Gutenberg", "Leonardo da Vinci", "Galileo Galilei", "Isaac Newton"],
       "correctIndex": 0,
       "difficulty": "medium"
@@ -177,7 +177,7 @@
     {
       "id": "his-006",
       "categoryId": "history",
-      "text": "In which year did the Berlin Wall fall?",
+      "text": "Berlin Duvarı hangi yıl yıkıldı?",
       "options": ["1987", "1989", "1991", "1993"],
       "correctIndex": 1,
       "difficulty": "medium"
@@ -185,7 +185,7 @@
     {
       "id": "his-007",
       "categoryId": "history",
-      "text": "Who was the primary author of the United States Declaration of Independence?",
+      "text": "Amerika Bağımsızlık Bildirgesi'nin başlıca yazarı kimdir?",
       "options": ["George Washington", "Thomas Jefferson", "Benjamin Franklin", "John Adams"],
       "correctIndex": 1,
       "difficulty": "medium"
@@ -193,31 +193,31 @@
     {
       "id": "his-008",
       "categoryId": "history",
-      "text": "The Renaissance began in which present-day country?",
-      "options": ["France", "Italy", "Spain", "Germany"],
+      "text": "Rönesans günümüzde hangi ülkede başladı?",
+      "options": ["Fransa", "İtalya", "İspanya", "Almanya"],
       "correctIndex": 1,
       "difficulty": "easy"
     },
     {
       "id": "his-009",
       "categoryId": "history",
-      "text": "Which ancient civilization built the city of Machu Picchu?",
-      "options": ["Aztec", "Maya", "Inca", "Olmec"],
+      "text": "Machu Picchu kentini hangi antik medeniyet inşa etti?",
+      "options": ["Aztek", "Maya", "İnka", "Olmek"],
       "correctIndex": 2,
       "difficulty": "medium"
     },
     {
       "id": "his-010",
       "categoryId": "history",
-      "text": "In which century did the French Revolution begin?",
-      "options": ["16th century", "17th century", "18th century", "19th century"],
+      "text": "Fransız Devrimi hangi yüzyılda başladı?",
+      "options": ["16. yüzyıl", "17. yüzyıl", "18. yüzyıl", "19. yüzyıl"],
       "correctIndex": 2,
       "difficulty": "medium"
     },
     {
       "id": "his-011",
       "categoryId": "history",
-      "text": "Who was the British Prime Minister for most of the Second World War?",
+      "text": "İkinci Dünya Savaşı'nın büyük kısmında İngiltere Başbakanı kimdi?",
       "options": ["Neville Chamberlain", "Winston Churchill", "Tony Blair", "Margaret Thatcher"],
       "correctIndex": 1,
       "difficulty": "easy"
@@ -225,111 +225,111 @@
     {
       "id": "his-012",
       "categoryId": "history",
-      "text": "The historic Silk Road trade routes primarily connected which two regions?",
-      "options": ["Africa and Europe", "Asia and Europe", "North America and Asia", "Europe and Australia"],
+      "text": "Tarihi İpek Yolu ticaret rotaları öncelikle hangi iki bölgeyi birbirine bağlardı?",
+      "options": ["Afrika ve Avrupa", "Asya ve Avrupa", "Kuzey Amerika ve Asya", "Avrupa ve Avustralya"],
       "correctIndex": 1,
       "difficulty": "hard"
     },
     {
       "id": "geo-001",
       "categoryId": "geography",
-      "text": "On which continent is the Sahara Desert located?",
-      "options": ["Asia", "Australia", "Africa", "South America"],
+      "text": "Sahra Çölü hangi kıtada bulunur?",
+      "options": ["Asya", "Avustralya", "Afrika", "Güney Amerika"],
       "correctIndex": 2,
       "difficulty": "easy"
     },
     {
       "id": "geo-002",
       "categoryId": "geography",
-      "text": "What is the capital city of Japan?",
-      "options": ["Seoul", "Beijing", "Bangkok", "Tokyo"],
+      "text": "Japonya'nın başkenti neresidir?",
+      "options": ["Seul", "Pekin", "Bangkok", "Tokyo"],
       "correctIndex": 3,
       "difficulty": "easy"
     },
     {
       "id": "geo-003",
       "categoryId": "geography",
-      "text": "Which ocean is the largest by surface area?",
-      "options": ["Atlantic", "Indian", "Arctic", "Pacific"],
+      "text": "Yüzey alanı bakımından en büyük okyanus hangisidir?",
+      "options": ["Atlantik", "Hint", "Arktik", "Pasifik"],
       "correctIndex": 3,
       "difficulty": "easy"
     },
     {
       "id": "geo-004",
       "categoryId": "geography",
-      "text": "Mount Everest sits on the border of Nepal and which other country?",
-      "options": ["India", "China", "Bhutan", "Pakistan"],
+      "text": "Everest Dağı, Nepal ile hangi ülkenin sınırında yer alır?",
+      "options": ["Hindistan", "Çin", "Butan", "Pakistan"],
       "correctIndex": 1,
       "difficulty": "medium"
     },
     {
       "id": "geo-005",
       "categoryId": "geography",
-      "text": "Which two continents does the Bosphorus strait separate?",
-      "options": ["Europe and Asia", "Africa and Asia", "Europe and Africa", "Asia and Oceania"],
+      "text": "İstanbul Boğazı hangi iki kıtayı birbirinden ayırır?",
+      "options": ["Avrupa ve Asya", "Afrika ve Asya", "Avrupa ve Afrika", "Asya ve Okyanusya"],
       "correctIndex": 0,
       "difficulty": "hard"
     },
     {
       "id": "geo-006",
       "categoryId": "geography",
-      "text": "Which river is generally considered the longest in the world?",
-      "options": ["Amazon", "Nile", "Yangtze", "Mississippi"],
+      "text": "Dünyanın genel olarak en uzun nehri sayılan hangisidir?",
+      "options": ["Amazon", "Nil", "Yangtze", "Mississippi"],
       "correctIndex": 1,
       "difficulty": "medium"
     },
     {
       "id": "geo-007",
       "categoryId": "geography",
-      "text": "Which is the smallest country in the world by land area?",
-      "options": ["Monaco", "Vatican City", "San Marino", "Liechtenstein"],
+      "text": "Kara alanı bakımından dünyanın en küçük ülkesi hangisidir?",
+      "options": ["Monako", "Vatikan", "San Marino", "Lihtenştayn"],
       "correctIndex": 1,
       "difficulty": "easy"
     },
     {
       "id": "geo-008",
       "categoryId": "geography",
-      "text": "Which country has the largest number of natural lakes in the world?",
-      "options": ["Canada", "Russia", "United States", "Finland"],
+      "text": "Dünyada en fazla doğal göle sahip ülke hangisidir?",
+      "options": ["Kanada", "Rusya", "Amerika Birleşik Devletleri", "Finlandiya"],
       "correctIndex": 0,
       "difficulty": "hard"
     },
     {
       "id": "geo-009",
       "categoryId": "geography",
-      "text": "What is the capital of Australia?",
-      "options": ["Sydney", "Melbourne", "Canberra", "Perth"],
+      "text": "Avustralya'nın başkenti neresidir?",
+      "options": ["Sidney", "Melbourne", "Canberra", "Perth"],
       "correctIndex": 2,
       "difficulty": "medium"
     },
     {
       "id": "geo-010",
       "categoryId": "geography",
-      "text": "Which mountain range is traditionally considered the boundary between Europe and Asia?",
-      "options": ["Alps", "Ural Mountains", "Andes", "Himalayas"],
+      "text": "Geleneksel olarak Avrupa ile Asya arasındaki sınır kabul edilen dağ silsilesi hangisidir?",
+      "options": ["Alpler", "Ural Dağları", "Andler", "Himalayalar"],
       "correctIndex": 1,
       "difficulty": "hard"
     },
     {
       "id": "geo-011",
       "categoryId": "geography",
-      "text": "The Amazon rainforest is located primarily in which country?",
-      "options": ["Peru", "Brazil", "Colombia", "Venezuela"],
+      "text": "Amazon yağmur ormanları öncelikle hangi ülkede yer alır?",
+      "options": ["Peru", "Brezilya", "Kolombiya", "Venezuela"],
       "correctIndex": 1,
       "difficulty": "easy"
     },
     {
       "id": "geo-012",
       "categoryId": "geography",
-      "text": "Which strait separates Europe from Africa at its narrowest point?",
-      "options": ["Strait of Hormuz", "Strait of Gibraltar", "Bosphorus", "Strait of Malacca"],
+      "text": "Avrupa'yı Afrika'dan en dar noktasında ayıran boğaz hangisidir?",
+      "options": ["Hürmüz Boğazı", "Cebelitarık Boğazı", "İstanbul Boğazı", "Malaka Boğazı"],
       "correctIndex": 1,
       "difficulty": "medium"
     },
     {
       "id": "spo-001",
       "categoryId": "sports",
-      "text": "How many players from one team are on the pitch at the start of a football (soccer) match?",
+      "text": "Bir futbol maçının başında bir takımdan sahada kaç oyuncu bulunur?",
       "options": ["9", "10", "11", "12"],
       "correctIndex": 2,
       "difficulty": "easy"
@@ -337,7 +337,7 @@
     {
       "id": "spo-002",
       "categoryId": "sports",
-      "text": "In tennis, what word is used for a score of zero?",
+      "text": "Teniste sıfır skoru için hangi kelime kullanılır?",
       "options": ["Love", "Nil", "Duck", "Blank"],
       "correctIndex": 0,
       "difficulty": "easy"
@@ -345,7 +345,7 @@
     {
       "id": "spo-003",
       "categoryId": "sports",
-      "text": "How many rings appear on the Olympic flag?",
+      "text": "Olimpiyat bayrağında kaç halka bulunur?",
       "options": ["4", "5", "6", "7"],
       "correctIndex": 1,
       "difficulty": "easy"
@@ -353,7 +353,7 @@
     {
       "id": "spo-004",
       "categoryId": "sports",
-      "text": "A shot made from beyond the arc in basketball is worth how many points?",
+      "text": "Basketbolda üç sayı çizgisinin dışından yapılan bir atış kaç puan değerindedir?",
       "options": ["1", "2", "3", "4"],
       "correctIndex": 2,
       "difficulty": "easy"
@@ -361,15 +361,15 @@
     {
       "id": "spo-005",
       "categoryId": "sports",
-      "text": "Which sport features the terms \"strike\" and \"spare\"?",
-      "options": ["Golf", "Bowling", "Darts", "Curling"],
+      "text": "Hangi sporda \"strike\" ve \"spare\" terimleri kullanılır?",
+      "options": ["Golf", "Bowling", "Dart", "Curling"],
       "correctIndex": 1,
       "difficulty": "easy"
     },
     {
       "id": "spo-006",
       "categoryId": "sports",
-      "text": "How many squares are there on a standard chessboard?",
+      "text": "Standart bir satranç tahtasında kaç kare bulunur?",
       "options": ["36", "49", "64", "81"],
       "correctIndex": 2,
       "difficulty": "medium"
@@ -377,15 +377,15 @@
     {
       "id": "spo-007",
       "categoryId": "sports",
-      "text": "How often are the modern Summer Olympic Games normally held?",
-      "options": ["Every 2 years", "Every 3 years", "Every 4 years", "Every 5 years"],
+      "text": "Modern Yaz Olimpiyat Oyunları normalde kaç yılda bir düzenlenir?",
+      "options": ["2 yılda bir", "3 yılda bir", "4 yılda bir", "5 yılda bir"],
       "correctIndex": 2,
       "difficulty": "easy"
     },
     {
       "id": "spo-008",
       "categoryId": "sports",
-      "text": "In a standard marathon, the race distance is closest to which value?",
+      "text": "Standart bir maratonda yarış mesafesi en çok hangi değere yakındır?",
       "options": ["21 km", "30 km", "42 km", "50 km"],
       "correctIndex": 2,
       "difficulty": "medium"
@@ -393,71 +393,71 @@
     {
       "id": "art-001",
       "categoryId": "art",
-      "text": "Mixing which two primary colors of paint produces green?",
-      "options": ["Red and blue", "Blue and yellow", "Red and yellow", "Black and white"],
+      "text": "Hangi iki ana rengin karıştırılması yeşil rengi oluşturur?",
+      "options": ["Kırmızı ve mavi", "Mavi ve sarı", "Kırmızı ve sarı", "Siyah ve beyaz"],
       "correctIndex": 1,
       "difficulty": "easy"
     },
     {
       "id": "art-002",
       "categoryId": "art",
-      "text": "What is the art of decorative, beautiful handwriting called?",
-      "options": ["Origami", "Calligraphy", "Mosaic", "Etching"],
+      "text": "Dekoratif, güzel el yazısı sanatına ne ad verilir?",
+      "options": ["Origami", "Hat sanatı", "Mozaik", "Gravür"],
       "correctIndex": 1,
       "difficulty": "medium"
     },
     {
       "id": "art-003",
       "categoryId": "art",
-      "text": "A painting that depicts an arrangement of everyday objects like fruit or flowers is known as a what?",
-      "options": ["Portrait", "Landscape", "Still life", "Mural"],
+      "text": "Meyve veya çiçek gibi günlük nesnelerin düzenlemesini gösteren resme ne denir?",
+      "options": ["Portre", "Manzara", "Natürmort", "Duvar resmi"],
       "correctIndex": 2,
       "difficulty": "medium"
     },
     {
       "id": "art-004",
       "categoryId": "art",
-      "text": "Which tool is most associated with applying oil paint to a canvas?",
-      "options": ["Chisel", "Brush", "Loom", "Kiln"],
+      "text": "Tuvale yağlı boya uygulamakla en çok ilişkilendirilen alet hangisidir?",
+      "options": ["Keski", "Fırça", "Dokuma tezgahı", "Fırın"],
       "correctIndex": 1,
       "difficulty": "easy"
     },
     {
       "id": "art-005",
       "categoryId": "art",
-      "text": "A picture made by fitting together small pieces of colored glass or stone is called a what?",
-      "options": ["Mosaic", "Fresco", "Collage", "Sketch"],
+      "text": "Küçük renkli cam veya taş parçalarının bir araya getirilmesiyle yapılan resme ne denir?",
+      "options": ["Mozaik", "Fresk", "Kolaj", "Eskiz"],
       "correctIndex": 0,
       "difficulty": "medium"
     },
     {
       "id": "art-006",
       "categoryId": "art",
-      "text": "The three traditional primary colors are red, yellow, and which other?",
-      "options": ["Green", "Blue", "Purple", "Orange"],
+      "text": "Geleneksel üç ana renk kırmızı, sarı ve hangisidir?",
+      "options": ["Yeşil", "Mavi", "Mor", "Turuncu"],
       "correctIndex": 1,
       "difficulty": "easy"
     },
     {
       "id": "art-007",
       "categoryId": "art",
-      "text": "The secondary colors are orange, green, and which other?",
-      "options": ["Purple", "Brown", "Pink", "Gray"],
+      "text": "Ara renkler turuncu, yeşil ve hangisidir?",
+      "options": ["Mor", "Kahverengi", "Pembe", "Gri"],
       "correctIndex": 0,
       "difficulty": "medium"
     },
     {
       "id": "art-008",
       "categoryId": "art",
-      "text": "What term describes a painting made on freshly applied wet plaster on a wall?",
-      "options": ["Fresco", "Collage", "Etching", "Pastel"],
+      "text": "Duvara yeni sürülmüş yaş sıva üzerine yapılan resme ne ad verilir?",
+      "options": ["Fresk", "Kolaj", "Gravür", "Pastel"],
       "correctIndex": 0,
       "difficulty": "hard"
     },
     {
       "id": "ent-001",
       "categoryId": "entertainment",
-      "text": "How many strings does a standard guitar have?",
+      "text": "Standart bir gitarda kaç tel bulunur?",
       "options": ["4", "5", "6", "7"],
       "correctIndex": 2,
       "difficulty": "easy"
@@ -465,7 +465,7 @@
     {
       "id": "ent-002",
       "categoryId": "entertainment",
-      "text": "How many suits are there in a standard deck of playing cards?",
+      "text": "Standart bir iskambil destesinde kaç farklı takım bulunur?",
       "options": ["2", "3", "4", "5"],
       "correctIndex": 2,
       "difficulty": "easy"
@@ -473,15 +473,15 @@
     {
       "id": "ent-003",
       "categoryId": "entertainment",
-      "text": "A story performed live by actors on a stage is called a what?",
-      "options": ["Novel", "Play", "Poem", "Essay"],
+      "text": "Sahnede oyuncular tarafından canlı olarak sergilenen bir hikayeye ne denir?",
+      "options": ["Roman", "Oyun", "Şiir", "Deneme"],
       "correctIndex": 1,
       "difficulty": "easy"
     },
     {
       "id": "ent-004",
       "categoryId": "entertainment",
-      "text": "How many keys does a standard full-size piano have?",
+      "text": "Standart tam boy bir piyanoda kaç tuş bulunur?",
       "options": ["76", "88", "96", "100"],
       "correctIndex": 1,
       "difficulty": "medium"
@@ -489,23 +489,23 @@
     {
       "id": "ent-005",
       "categoryId": "entertainment",
-      "text": "A film built from drawn or computer-generated images rather than live actors is called what?",
-      "options": ["Documentary", "Animation", "Newsreel", "Thriller"],
+      "text": "Canlı oyuncular yerine çizim veya bilgisayar üretimi görüntülerden oluşan filme ne denir?",
+      "options": ["Belgesel", "Animasyon", "Haber filmi", "Gerilim filmi"],
       "correctIndex": 1,
       "difficulty": "easy"
     },
     {
       "id": "ent-006",
       "categoryId": "entertainment",
-      "text": "A large group of musicians playing together under a conductor is called a what?",
-      "options": ["Band", "Choir", "Orchestra", "Duet"],
+      "text": "Bir şef yönetiminde birlikte çalan büyük müzisyen grubuna ne denir?",
+      "options": ["Grup", "Koro", "Orkestra", "Düet"],
       "correctIndex": 2,
       "difficulty": "easy"
     },
     {
       "id": "ent-007",
       "categoryId": "entertainment",
-      "text": "In common 4/4 time, how many beats does a whole note last?",
+      "text": "Yaygın 4/4'lük ölçüde bir tam nota kaç vuruş sürer?",
       "options": ["1", "2", "3", "4"],
       "correctIndex": 3,
       "difficulty": "medium"
@@ -513,7 +513,7 @@
     {
       "id": "ent-008",
       "categoryId": "entertainment",
-      "text": "How many players take part in a doubles match in table tennis?",
+      "text": "Masa tenisinde çiftler maçında kaç oyuncu yer alır?",
       "options": ["2", "3", "4", "5"],
       "correctIndex": 2,
       "difficulty": "medium"
