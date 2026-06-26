@@ -78,7 +78,7 @@ class MenuScreen extends ConsumerWidget {
                           Color(0xFF7B1FA2), // Sanat
                           Color(0xFFC2185B), // Eğlence
                         ],
-                        onTap: () => context.push('/game'),
+                        onTap: () => context.push('/map-game'),
                       ),
                     ),
                     const SizedBox(width: 16),
