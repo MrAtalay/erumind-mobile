@@ -65,24 +65,72 @@ class _GameContent extends ConsumerWidget {
     return Column(
       children: [
         _TopBar(state: state),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          child: AspectRatio(
-            aspectRatio: kMapAspect,
-            child: _MapArea(
-              state: state,
-              hoveredContinent: hoveredContinent,
-              onHover: onHover,
-            ),
-          ),
-        ),
+        _WorldControlBar(state: state),
         Expanded(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.only(top: 14, bottom: 16),
-            child: _BottomPanel(state: state),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 6),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 6),
+                        child: AspectRatio(
+                          aspectRatio: kMapAspect,
+                          child: _MapArea(
+                            state: state,
+                            hoveredContinent: hoveredContinent,
+                            onHover: onHover,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+                      _BottomPanel(state: state),
+                      const SizedBox(height: 10),
+                    ],
+                  ),
+                ),
+              );
+            },
           ),
         ),
       ],
+    );
+  }
+}
+
+/// A 7-segment bar showing world control at a glance — each continent coloured
+/// by its owner (green = you, red = rival, muted = unclaimed).
+class _WorldControlBar extends StatelessWidget {
+  final MapGameState state;
+  const _WorldControlBar({required this.state});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 2, 16, 6),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(6),
+        child: Row(
+          children: [
+            for (var i = 0; i < kContinents.length; i++) ...[
+              Expanded(
+                child: Container(
+                  height: 8,
+                  color: switch (state.ownership[kContinents[i].id] ?? Owner.neutral) {
+                    Owner.player  => const Color(0xFF4ADE80),
+                    Owner.ai      => const Color(0xFFF87171),
+                    Owner.neutral => Colors.white.withAlpha(36),
+                  },
+                ),
+              ),
+              if (i != kContinents.length - 1) const SizedBox(width: 2),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }
@@ -140,7 +188,9 @@ class _CountChip extends StatelessWidget {
           decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
         const SizedBox(width: 6),
-        Text('$label: $count', style: TextStyle(color: color, fontWeight: FontWeight.w700)),
+        Text('$label ', style: TextStyle(color: color, fontWeight: FontWeight.w700, fontSize: 15)),
+        Text('$count', style: TextStyle(color: color, fontWeight: FontWeight.w900, fontSize: 17)),
+        Text('/7', style: TextStyle(color: color.withValues(alpha: 0.6), fontWeight: FontWeight.w700, fontSize: 13)),
       ],
     );
   }
@@ -164,12 +214,18 @@ class _MapArea extends ConsumerWidget {
     final reachable = _isInteractive ? reachableContinentsFor(state) : const <String>{};
     final highlighted = state.phase == MapGamePhase.playerTurn ? hoveredContinent : null;
 
+    final candidates = state.phase == MapGamePhase.selectStart
+        ? kContinents.map((c) => c.id).toSet()
+        : reachable;
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final size = constraints.biggest;
         return GestureDetector(
             onTapUp: !_isInteractive ? null : (details) {
-              final id = WorldMapPainter.continentAt(details.localPosition, size);
+              final pos = details.localPosition;
+              final id = WorldMapPainter.continentAt(pos, size) ??
+                  WorldMapPainter.nearestContinentAt(pos, size, candidates: candidates);
               if (id == null) return;
               _onTap(context, ref, id);
             },

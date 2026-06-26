@@ -181,6 +181,31 @@ class WorldMapPainter extends CustomPainter {
     return null;
   }
 
+  /// Forgiving fallback for a tap that missed every polygon: the nearest
+  /// [candidates] continent whose label centroid is within [maxDist] pixels.
+  static String? nearestContinentAt(
+    Offset position,
+    Size size, {
+    required Set<String> candidates,
+    double maxDist = 40,
+  }) {
+    if (candidates.isEmpty) return null;
+    final rect = mapRect(size);
+    String? best;
+    var bestD = maxDist;
+    for (final id in candidates) {
+      final c = _labelCentroids[id];
+      if (c == null) continue;
+      final px = Offset(rect.left + c.dx * rect.width, rect.top + c.dy * rect.height);
+      final d = (px - position).distance;
+      if (d < bestD) {
+        bestD = d;
+        best = id;
+      }
+    }
+    return best;
+  }
+
   @override
   bool shouldRepaint(WorldMapPainter old) =>
       old.ownership != ownership ||
