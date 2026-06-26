@@ -10,15 +10,30 @@ class WorldMapPainter extends CustomPainter {
   final String? highlighted;
   final bool dimUnreachable;
 
+  /// Continent the rival is currently attacking — drawn with a red halo.
+  final String? attackingId;
+
+  /// 0→1 pulse used for the rival's attack glow.
+  final double attackPulse;
+
+  /// Continent that just changed hands — flashes white then fades (0→1 = done).
+  final String? flashId;
+  final double flashValue;
+
   // Muted faction colours — calm emerald / clay rose instead of neon.
   static const _playerColor = Color(0xFF4FB68A);
   static const _aiColor = Color(0xFFC97A78);
+  static const _attackColor = Color(0xFFE8635E);
 
   const WorldMapPainter({
     required this.ownership,
     required this.reachable,
     this.highlighted,
     this.dimUnreachable = false,
+    this.attackingId,
+    this.attackPulse = 0,
+    this.flashId,
+    this.flashValue = 1,
   });
 
   @override
@@ -55,6 +70,19 @@ class WorldMapPainter extends CustomPainter {
       );
     }
 
+    // Rival attack halo — a pulsing red glow on the continent being attacked.
+    if (attackingId != null) {
+      for (final shape in kWorldShapes) {
+        if (shape.continentId != attackingId) continue;
+        canvas.drawPath(
+          _shapePath(shape.points, rect),
+          Paint()
+            ..color = _attackColor.withValues(alpha: 0.35 + 0.45 * attackPulse)
+            ..maskFilter = MaskFilter.blur(BlurStyle.normal, 6 + 8 * attackPulse),
+        );
+      }
+    }
+
     // Pass 2 — flat continent fills + a clean continent outline. The shapes are
     // dissolved per continent, so the outline traces just the continent edge —
     // no internal country borders.
@@ -88,7 +116,10 @@ class WorldMapPainter extends CustomPainter {
       // Continent outline.
       final Color outline;
       double outlineWidth;
-      if (isTarget) {
+      if (shape.continentId == attackingId) {
+        outline = _attackColor;
+        outlineWidth = 2.0;
+      } else if (isTarget) {
         outline = const Color(0xFFE6C878);
         outlineWidth = 1.6;
       } else if (dimUnreachable && !isOwned) {
@@ -106,6 +137,15 @@ class WorldMapPainter extends CustomPainter {
           ..strokeWidth = outlineWidth
           ..strokeJoin = StrokeJoin.round,
       );
+
+      // Conquest flash — a white burst over the continent that just flipped,
+      // fading as flashValue → 1.
+      if (shape.continentId == flashId && flashValue < 1) {
+        canvas.drawPath(
+          path,
+          Paint()..color = Colors.white.withValues(alpha: (1 - flashValue) * 0.55),
+        );
+      }
     }
 
     // Vignette — gentle edge darkening for depth (lighter than before).
@@ -138,7 +178,8 @@ class WorldMapPainter extends CustomPainter {
       if (def == null) return;
       final isHighlighted = contId == highlighted;
       final isReachable = reachable.contains(contId);
-      final visible = isHighlighted || owner != Owner.neutral || isReachable;
+      final visible =
+          isHighlighted || owner != Owner.neutral || isReachable || contId == attackingId;
       final center = Offset(
         rect.left + normCentroid.dx * rect.width,
         rect.top + normCentroid.dy * rect.height,
@@ -239,7 +280,11 @@ class WorldMapPainter extends CustomPainter {
       old.ownership != ownership ||
       old.reachable != reachable ||
       old.highlighted != highlighted ||
-      old.dimUnreachable != dimUnreachable;
+      old.dimUnreachable != dimUnreachable ||
+      old.attackingId != attackingId ||
+      old.attackPulse != attackPulse ||
+      old.flashId != flashId ||
+      old.flashValue != flashValue;
 }
 
 /// Centroid (normalised 0..1) of each continent's largest polygon, for labels.

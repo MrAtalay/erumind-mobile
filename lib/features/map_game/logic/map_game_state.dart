@@ -8,7 +8,9 @@ enum MapGamePhase {
   playerTurn,         // player picks a continent to attack
   playerQuestion,     // MC question is being shown
   tiebreakerQuestion, // numeric tiebreaker (both answered correctly)
-  result,             // brief result before next turn
+  result,             // player's move resolved — shown over the map
+  aiTurn,             // rival is attacking (target highlighted on the map)
+  aiResult,           // rival's move resolved — shown over the map
   gameOver,
 }
 

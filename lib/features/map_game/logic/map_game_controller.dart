@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../features/game/logic/game_controller.dart';
 import '../data/continent_defs.dart';
-import '../data/tiebreaker_questions.dart';
 import 'map_game_state.dart';
 
 final mapGameProvider =
@@ -47,13 +46,11 @@ class MapGameController extends AsyncNotifier<MapGameState> {
     if (s.ownership[continentId] == Owner.player) return;
     if (!_reachableByPlayer(s, continentId)) return;
 
-    final aiTarget = _pickAiTarget(s);
     final question = await _fetchRandomQuestion();
     if (question == null) return;
 
     state = AsyncData(s.copyWith(
       playerTarget: continentId,
-      aiTarget: aiTarget,
       currentQuestion: question,
       phase: MapGamePhase.playerQuestion,
     ));
@@ -71,69 +68,28 @@ class MapGameController extends AsyncNotifier<MapGameState> {
       selectedIndex: selectedIndex,
     );
 
-    final playerCorrect = result.isCorrect;
     final target = s.playerTarget!;
     final targetName = continentById(target)?.name ?? target;
-    final aiTarget = s.aiTarget;
-    final contested = aiTarget == target;
+    final ownership = Map<String, Owner>.from(s.ownership);
 
-    Map<String, Owner> ownership = Map.from(s.ownership);
     String msg;
     Owner? roundWinner;
-    MapGamePhase nextPhase;
-
-    if (playerCorrect) {
-      if (contested) {
-        // Both competing for same continent — does AI also answer correctly?
-        if (_aiRolls()) {
-          // Tiebreaker needed
-          final tb = kTiebreakerQuestions[_rng.nextInt(kTiebreakerQuestions.length)];
-          state = AsyncData(s.copyWith(
-            tiebreaker: tb,
-            lastCorrectIndex: result.correctIndex,
-            lastPlayerChoice: selectedIndex,
-            phase: MapGamePhase.tiebreakerQuestion,
-            clearQuestion: false,
-          ));
-          return;
-        } else {
-          // AI wrong → player wins
-          ownership[target] = Owner.player;
-          roundWinner = Owner.player;
-          msg = 'Rakip yanıldı — $targetName ele geçirildi!';
-        }
-      } else {
-        // Uncontested: player wins their target
-        ownership[target] = Owner.player;
-        roundWinner = Owner.player;
-        msg = 'Doğru! $targetName ele geçirildi.';
-        // AI also resolves its own target
-        ownership = _resolveAi(ownership, aiTarget);
-      }
+    if (result.isCorrect) {
+      ownership[target] = Owner.player;
+      roundWinner = Owner.player;
+      msg = 'Doğru! $targetName ele geçirildi.';
     } else {
-      // Player wrong
-      if (contested) {
-        // AI auto-wins the contested continent
-        ownership[target] = Owner.ai;
-        roundWinner = Owner.ai;
-        msg = 'Yanlış! Rakip $targetName bölgesini ele geçirdi.';
-      } else {
-        msg = 'Yanlış! Tur geçildi.';
-        ownership = _resolveAi(ownership, aiTarget);
-      }
+      msg = 'Yanlış! $targetName alınamadı.';
     }
 
     final gameWinner = _checkWin(ownership);
-    nextPhase = gameWinner != null ? MapGamePhase.gameOver : MapGamePhase.result;
-
     state = AsyncData(s.copyWith(
       ownership: ownership,
-      phase: nextPhase,
-      lastCorrectIndex: result.correctIndex,
-      lastPlayerChoice: selectedIndex,
+      phase: gameWinner != null ? MapGamePhase.gameOver : MapGamePhase.result,
       resultMessage: msg,
       roundWinner: roundWinner,
       winner: gameWinner,
+      clearQuestion: true,
     ));
   }
 
@@ -186,11 +142,66 @@ class MapGameController extends AsyncNotifier<MapGameState> {
     ));
   }
 
-  // ── Phase: result → playerTurn ───────────────────────────────────────────
+  // ── Phase: result → aiTurn → aiResult → playerTurn ───────────────────────
 
-  void nextTurn() {
+  /// From the player's result: the rival now takes a *visible* turn — it lines
+  /// up an attack (target highlighted on the map), pauses, then resolves.
+  Future<void> startAiTurn() async {
     final s = state.requireValue;
     if (s.phase != MapGamePhase.result) return;
+
+    final aiTarget = _pickAiTarget(s);
+    if (aiTarget == null) {
+      _toPlayerTurn(s); // rival is boxed in — skip straight back to the player
+      return;
+    }
+    final aiName = continentById(aiTarget)?.name ?? aiTarget;
+
+    state = AsyncData(s.copyWith(
+      phase: MapGamePhase.aiTurn,
+      aiTarget: aiTarget,
+      resultMessage: 'Rakip $aiName bölgesine saldırıyor…',
+      clearRoundWinner: true,
+      clearPlayerTarget: true,
+    ));
+
+    await Future.delayed(const Duration(milliseconds: 1500));
+    final cur = state.value;
+    if (cur == null || cur.phase != MapGamePhase.aiTurn) return;
+
+    final ownership = Map<String, Owner>.from(cur.ownership);
+    final wasPlayer = ownership[aiTarget] == Owner.player;
+    final success = _rng.nextDouble() < (wasPlayer ? 0.35 : 0.60);
+
+    String msg;
+    Owner? roundWinner;
+    if (success) {
+      ownership[aiTarget] = Owner.ai;
+      roundWinner = Owner.ai;
+      msg = wasPlayer
+          ? 'Rakip senin $aiName bölgeni ele geçirdi!'
+          : 'Rakip $aiName bölgesini ele geçirdi.';
+    } else {
+      msg = 'Rakip $aiName saldırısında başarısız oldu.';
+    }
+
+    final gameWinner = _checkWin(ownership);
+    state = AsyncData(cur.copyWith(
+      ownership: ownership,
+      phase: gameWinner != null ? MapGamePhase.gameOver : MapGamePhase.aiResult,
+      resultMessage: msg,
+      roundWinner: roundWinner,
+      winner: gameWinner,
+    ));
+  }
+
+  void endAiTurn() {
+    final s = state.requireValue;
+    if (s.phase != MapGamePhase.aiResult) return;
+    _toPlayerTurn(s);
+  }
+
+  void _toPlayerTurn(MapGameState s) {
     state = AsyncData(s.copyWith(
       phase: MapGamePhase.playerTurn,
       clearResult: true,
@@ -225,18 +236,6 @@ class MapGameController extends AsyncNotifier<MapGameState> {
     final pool = neutral.isNotEmpty ? neutral : reachable.toList();
     return pool[_rng.nextInt(pool.length)];
   }
-
-  Map<String, Owner> _resolveAi(Map<String, Owner> ownership, String? aiTarget) {
-    if (aiTarget == null) return ownership;
-    final isPlayerTerritory = ownership[aiTarget] == Owner.player;
-    final successRate = isPlayerTerritory ? 0.35 : 0.60;
-    if (_rng.nextDouble() < successRate) {
-      return Map.from(ownership)..[aiTarget] = Owner.ai;
-    }
-    return ownership;
-  }
-
-  bool _aiRolls({double rate = 0.55}) => _rng.nextDouble() < rate;
 
   Owner? _checkWin(Map<String, Owner> ownership) {
     final total = ownership.length;

@@ -70,7 +70,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
 
 // ── Game content (landscape stack) ─────────────────────────────────────────────
 
-class _GameContent extends ConsumerWidget {
+class _GameContent extends ConsumerStatefulWidget {
   final MapGameState state;
   final String? hoveredContinent;
   final ValueChanged<String?> onHover;
@@ -81,53 +81,211 @@ class _GameContent extends ConsumerWidget {
     required this.onHover,
   });
 
+  @override
+  ConsumerState<_GameContent> createState() => _GameContentState();
+}
+
+class _GameContentState extends ConsumerState<_GameContent>
+    with TickerProviderStateMixin {
+  // Only the answer/end moments dim the map; conquests stay map-visible so the
+  // player can watch the board change.
   static const _focusPhases = {
     MapGamePhase.playerQuestion,
     MapGamePhase.tiebreakerQuestion,
-    MapGamePhase.result,
     MapGamePhase.gameOver,
   };
 
+  late final AnimationController _pulse; // rival attack glow (loops in aiTurn)
+  late final AnimationController _flash; // one-shot conquest burst
+  String? _flashId;
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final isSelecting = state.phase == MapGamePhase.selectStart ||
-        state.phase == MapGamePhase.playerTurn;
-    final isFocus = _focusPhases.contains(state.phase);
+  void initState() {
+    super.initState();
+    _pulse = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    );
+    _flash = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 650),
+      value: 1,
+    );
+    if (widget.state.phase == MapGamePhase.aiTurn) _pulse.repeat(reverse: true);
+  }
+
+  @override
+  void didUpdateWidget(covariant _GameContent old) {
+    super.didUpdateWidget(old);
+    final phase = widget.state.phase;
+
+    // Run the attack pulse only while the rival is attacking.
+    if (phase == MapGamePhase.aiTurn && !_pulse.isAnimating) {
+      _pulse.repeat(reverse: true);
+    } else if (phase != MapGamePhase.aiTurn && _pulse.isAnimating) {
+      _pulse.stop();
+    }
+
+    // Flash a continent that just changed hands (single-continent conquests).
+    final changed = <String>[];
+    widget.state.ownership.forEach((id, owner) {
+      if (owner != Owner.neutral && old.state.ownership[id] != owner) changed.add(id);
+    });
+    if (changed.length == 1) {
+      _flashId = changed.first;
+      _flash.forward(from: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _pulse.dispose();
+    _flash.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final state = widget.state;
+    final phase = state.phase;
+    final isSelecting =
+        phase == MapGamePhase.selectStart || phase == MapGamePhase.playerTurn;
+    final isBanner = phase == MapGamePhase.result ||
+        phase == MapGamePhase.aiTurn ||
+        phase == MapGamePhase.aiResult;
+    final isFocus = _focusPhases.contains(phase);
+    final attackingId = phase == MapGamePhase.aiTurn ? state.aiTarget : null;
 
     return Stack(
       children: [
-        // Full-screen map (calm backdrop).
+        // Full-screen map; repaints while the attack pulse or conquest flash run.
         Positioned.fill(
-          child: _MapArea(
-            state: state,
-            hoveredContinent: hoveredContinent,
-            onHover: onHover,
+          child: AnimatedBuilder(
+            animation: Listenable.merge([_pulse, _flash]),
+            builder: (_, _) => _MapArea(
+              state: state,
+              hoveredContinent: widget.hoveredContinent,
+              onHover: widget.onHover,
+              attackingId: attackingId,
+              attackPulse: attackingId != null ? _pulse.value : 0,
+              flashId: _flashId,
+              flashValue: _flash.value,
+            ),
           ),
         ),
 
-        // Focused question/result moment: the map dims & blurs behind a
-        // centred panel so a single thing has attention at a time.
+        // Focused answer / game-over moment — dim + blur behind a centred panel.
         Positioned.fill(
           child: AnimatedSwitcher(
             duration: const Duration(milliseconds: 220),
             child: isFocus
-                ? _FocusOverlay(key: ValueKey(state.phase), state: state)
+                ? _FocusOverlay(key: ValueKey(phase), state: state)
                 : const SizedBox.shrink(),
           ),
         ),
 
-        // Bottom-centre instruction chip while choosing a continent.
-        if (isSelecting)
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 16,
-            child: Center(child: _InstructionChip(state: state)),
+        // Bottom banner / chip (map stays visible above it).
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: 16,
+          child: Center(
+            child: isSelecting
+                ? _InstructionChip(state: state)
+                : isBanner
+                    ? _BottomBanner(state: state, pulse: _pulse)
+                    : const SizedBox.shrink(),
           ),
+        ),
 
         // Top header (above the dim so the score stays readable).
         Positioned(top: 0, left: 0, right: 0, child: _HeaderOverlay(state: state)),
       ],
+    );
+  }
+}
+
+/// Map-visible banner for the player/rival result + the rival's attack beat.
+class _BottomBanner extends ConsumerWidget {
+  final MapGameState state;
+  final Animation<double> pulse;
+  const _BottomBanner({required this.state, required this.pulse});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final phase = state.phase;
+    final msg = state.resultMessage ?? '';
+    final isAttacking = phase == MapGamePhase.aiTurn;
+    final showButton =
+        phase == MapGamePhase.result || phase == MapGamePhase.aiResult;
+    final color = state.roundWinner == Owner.player
+        ? _kPlayerColor
+        : state.roundWinner == Owner.ai
+            ? _kAiColor
+            : Colors.white;
+
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 560),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 13),
+      decoration: BoxDecoration(
+        color: Colors.black.withAlpha(175),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withAlpha(28)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (isAttacking) ...[
+                FadeTransition(
+                  opacity: pulse,
+                  child: Container(
+                    width: 9,
+                    height: 9,
+                    decoration: const BoxDecoration(
+                        color: Color(0xFFE8635E), shape: BoxShape.circle),
+                  ),
+                ),
+                const SizedBox(width: 9),
+              ],
+              Flexible(
+                child: Text(
+                  msg,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                      color: color, fontSize: 14.5, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
+          if (showButton) ...[
+            const SizedBox(height: 11),
+            SizedBox(
+              width: 220,
+              child: FilledButton(
+                onPressed: () {
+                  final ctrl = ref.read(mapGameProvider.notifier);
+                  if (phase == MapGamePhase.result) {
+                    ctrl.startAiTurn();
+                  } else {
+                    ctrl.endAiTurn();
+                  }
+                },
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFFCC1020),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+                child: Text(
+                  phase == MapGamePhase.result ? 'Rakibin sırası →' : 'Devam',
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }
@@ -159,7 +317,6 @@ class _FocusOverlay extends StatelessWidget {
                   child: switch (state.phase) {
                     MapGamePhase.playerQuestion => _QuestionPanel(state: state),
                     MapGamePhase.tiebreakerQuestion => _TiebreakerPanel(state: state),
-                    MapGamePhase.result => _ResultPanel(state: state),
                     MapGamePhase.gameOver => _GameOverPanel(state: state),
                     _ => const SizedBox.shrink(),
                   },
@@ -360,8 +517,20 @@ class _MapArea extends ConsumerWidget {
   final MapGameState state;
   final String? hoveredContinent;
   final ValueChanged<String?> onHover;
+  final String? attackingId;
+  final double attackPulse;
+  final String? flashId;
+  final double flashValue;
 
-  const _MapArea({required this.state, required this.hoveredContinent, required this.onHover});
+  const _MapArea({
+    required this.state,
+    required this.hoveredContinent,
+    required this.onHover,
+    this.attackingId,
+    this.attackPulse = 0,
+    this.flashId,
+    this.flashValue = 1,
+  });
 
   bool get _isInteractive =>
       state.phase == MapGamePhase.selectStart || state.phase == MapGamePhase.playerTurn;
@@ -403,6 +572,10 @@ class _MapArea extends ConsumerWidget {
                 reachable: reachable,
                 highlighted: highlighted,
                 dimUnreachable: state.phase == MapGamePhase.playerTurn,
+                attackingId: attackingId,
+                attackPulse: attackPulse,
+                flashId: flashId,
+                flashValue: flashValue,
               ),
             ),
           ),
@@ -480,45 +653,6 @@ class _TiebreakerPanel extends ConsumerWidget {
         _AnswerGrid(
           labels: tb.options.map((o) => o.toString()).toList(),
           onSelect: (i) => ref.read(mapGameProvider.notifier).answerTiebreaker(i),
-        ),
-      ],
-    );
-  }
-}
-
-// ── Panel: result ─────────────────────────────────────────────────────────────
-
-class _ResultPanel extends ConsumerWidget {
-  final MapGameState state;
-  const _ResultPanel({required this.state});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final won = state.roundWinner == Owner.player;
-    final lost = state.roundWinner == Owner.ai;
-    final isDraw = (state.resultMessage ?? '').startsWith('Beraberlik');
-    final icon = won ? '🌍' : lost ? '😬' : isDraw ? '🤝' : '😐';
-    final color = won ? _kPlayerColor : lost ? _kAiColor : Colors.white70;
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(icon, style: const TextStyle(fontSize: 52)),
-        const SizedBox(height: 16),
-        Text(state.resultMessage ?? '',
-            style: TextStyle(color: color, fontSize: 17, fontWeight: FontWeight.w600, height: 1.35),
-            textAlign: TextAlign.center),
-        const SizedBox(height: 28),
-        SizedBox(
-          width: 260,
-          child: FilledButton(
-            onPressed: () => ref.read(mapGameProvider.notifier).nextTurn(),
-            style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFFCC1020),
-              padding: const EdgeInsets.symmetric(vertical: 15),
-            ),
-            child: const Text('Devam', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
-          ),
         ),
       ],
     );
