@@ -85,8 +85,14 @@ class WorldMapPainter extends CustomPainter {
       final labelColor = Colors.white.withValues(
         alpha: isHighlighted || isOwned || isReachable ? 1.0 : 0.55,
       );
-      _drawLabel(canvas, c.name, labelPx, labelColor, size.width * 0.14,
-          fontSize: c.id == 'antarctica' || c.id == 'europe' ? 8.5 : 10.0);
+      final labelSize = switch (c.id) {
+        'europe'     => 8.0,
+        'antarctica' => 8.5,
+        'australia'  => 9.5,
+        _            => 10.5,
+      };
+      _drawLabel(canvas, c.name, labelPx, labelColor, size.width * 0.16,
+          fontSize: labelSize);
     }
   }
 
