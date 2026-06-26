@@ -26,12 +26,13 @@ class WorldMapPainter extends CustomPainter {
     final rect = mapRect(size);
     final rrect = RRect.fromRectAndRadius(rect, const Radius.circular(16));
 
-    // Ocean panel — deep, desaturated slate-navy (calm, low eye strain).
+    // Ocean panel — calm slate-blue, a touch lighter so it reads clean
+    // (airy) rather than murky.
     final oceanPaint = Paint()
       ..shader = const LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-        colors: [Color(0xFF143240), Color(0xFF0A1A24)],
+        colors: [Color(0xFF1B4055), Color(0xFF0E2533)],
       ).createShader(rect);
     canvas.drawRRect(rrect, oceanPaint);
 
@@ -39,12 +40,29 @@ class WorldMapPainter extends CustomPainter {
     canvas.save();
     canvas.clipRRect(rrect);
 
-    // Draw landmasses, grouped by continent so colours read as one mass.
+    // Pass 1 — soft gold halo behind reachable / highlighted continents. A
+    // glow reads as "you can attack here" without busy internal outlines.
+    for (final shape in kWorldShapes) {
+      final isTarget =
+          reachable.contains(shape.continentId) || shape.continentId == highlighted;
+      if (!isTarget) continue;
+      final strong = shape.continentId == highlighted;
+      canvas.drawPath(
+        _shapePath(shape.points, rect),
+        Paint()
+          ..color = const Color(0xFFEBCF86).withValues(alpha: strong ? 0.65 : 0.45)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 7),
+      );
+    }
+
+    // Pass 2 — flat continent fills. No internal country borders; a same-colour
+    // hairline seals the anti-alias seams between neighbouring polygons so each
+    // continent reads as one clean shape.
     for (final shape in kWorldShapes) {
       final owner = ownership[shape.continentId] ?? Owner.neutral;
       final def = continentById(shape.continentId);
-      final isHighlighted = shape.continentId == highlighted;
-      final isReachable = reachable.contains(shape.continentId);
+      final isTarget =
+          reachable.contains(shape.continentId) || shape.continentId == highlighted;
       final isOwned = owner != Owner.neutral;
 
       final fill = switch (owner) {
@@ -53,51 +71,34 @@ class WorldMapPainter extends CustomPainter {
         Owner.neutral => def?.color ?? const Color(0xFF888888),
       };
 
-      double opacity;
-      if (isHighlighted) {
-        opacity = 1.0;
-      } else if (isOwned) {
-        opacity = 0.94;
-      } else if (isReachable) {
-        opacity = 0.90;
-      } else if (dimUnreachable) {
-        opacity = 0.45;
-      } else {
-        opacity = 0.86;
-      }
+      final double opacity = (isOwned || isTarget)
+          ? 0.97
+          : dimUnreachable
+              ? 0.55
+              : 0.92;
 
       final path = _shapePath(shape.points, rect);
-
+      final fillColor = fill.withValues(alpha: opacity);
+      canvas.drawPath(path, Paint()..color = fillColor..style = PaintingStyle.fill);
       canvas.drawPath(
         path,
         Paint()
-          ..color = fill.withValues(alpha: opacity)
-          ..style = PaintingStyle.fill,
-      );
-
-      // Per-polygon border. Reachable continents get a soft gold edge so the
-      // player sees where they may attack; everything else uses a faint dark
-      // coastline line (calmer than bright white grid lines).
-      final isTarget = isHighlighted || isReachable;
-      canvas.drawPath(
-        path,
-        Paint()
-          ..color = isTarget ? const Color(0xFFE6C878) : Colors.black.withAlpha(38)
+          ..color = fillColor
           ..style = PaintingStyle.stroke
-          ..strokeWidth = isTarget ? 1.4 : 0.5
+          ..strokeWidth = 0.8
           ..strokeJoin = StrokeJoin.round,
       );
     }
 
-    // Vignette — subtle darkening toward the edges adds depth and focus.
+    // Vignette — gentle edge darkening for depth (lighter than before).
     canvas.drawRect(
       rect,
       Paint()
         ..shader = RadialGradient(
           center: Alignment.center,
-          radius: 0.95,
-          colors: [Colors.transparent, Colors.black.withAlpha(70)],
-          stops: const [0.62, 1.0],
+          radius: 1.0,
+          colors: [Colors.transparent, Colors.black.withAlpha(46)],
+          stops: const [0.7, 1.0],
         ).createShader(rect),
     );
 
@@ -107,9 +108,9 @@ class WorldMapPainter extends CustomPainter {
     canvas.drawRRect(
       rrect,
       Paint()
-        ..color = Colors.black.withAlpha(90)
+        ..color = Colors.black.withAlpha(55)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.5,
+        ..strokeWidth = 1.2,
     );
 
     // Labels — one per continent, at the centroid of its largest polygon.
@@ -128,7 +129,7 @@ class WorldMapPainter extends CustomPainter {
         canvas,
         def.name,
         center,
-        Colors.white.withValues(alpha: visible ? 0.92 : 0.62),
+        Colors.white.withValues(alpha: visible ? 0.95 : 0.72),
         rect.width * 0.18,
       );
     });

@@ -70,7 +70,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
 
 // ── Game content (landscape stack) ─────────────────────────────────────────────
 
-class _GameContent extends ConsumerStatefulWidget {
+class _GameContent extends ConsumerWidget {
   final MapGameState state;
   final String? hoveredContinent;
   final ValueChanged<String?> onHover;
@@ -81,15 +81,7 @@ class _GameContent extends ConsumerStatefulWidget {
     required this.onHover,
   });
 
-  @override
-  ConsumerState<_GameContent> createState() => _GameContentState();
-}
-
-class _GameContentState extends ConsumerState<_GameContent> {
-  /// Manual collapse of the side panel within the current phase.
-  bool _collapsed = false;
-
-  static const _panelPhases = {
+  static const _focusPhases = {
     MapGamePhase.playerQuestion,
     MapGamePhase.tiebreakerQuestion,
     MapGamePhase.result,
@@ -97,77 +89,86 @@ class _GameContentState extends ConsumerState<_GameContent> {
   };
 
   @override
-  void didUpdateWidget(covariant _GameContent old) {
-    super.didUpdateWidget(old);
-    // A new phase starts fresh (re-open the panel if it was peeked closed).
-    if (old.state.phase != widget.state.phase) _collapsed = false;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isSelecting = state.phase == MapGamePhase.selectStart ||
+        state.phase == MapGamePhase.playerTurn;
+    final isFocus = _focusPhases.contains(state.phase);
+
+    return Stack(
+      children: [
+        // Full-screen map (calm backdrop).
+        Positioned.fill(
+          child: _MapArea(
+            state: state,
+            hoveredContinent: hoveredContinent,
+            onHover: onHover,
+          ),
+        ),
+
+        // Focused question/result moment: the map dims & blurs behind a
+        // centred panel so a single thing has attention at a time.
+        Positioned.fill(
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 220),
+            child: isFocus
+                ? _FocusOverlay(key: ValueKey(state.phase), state: state)
+                : const SizedBox.shrink(),
+          ),
+        ),
+
+        // Bottom-centre instruction chip while choosing a continent.
+        if (isSelecting)
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 16,
+            child: Center(child: _InstructionChip(state: state)),
+          ),
+
+        // Top header (above the dim so the score stays readable).
+        Positioned(top: 0, left: 0, right: 0, child: _HeaderOverlay(state: state)),
+      ],
+    );
   }
+}
+
+/// Dim + blur backdrop with the phase content centred on top.
+class _FocusOverlay extends StatelessWidget {
+  final MapGameState state;
+  const _FocusOverlay({super.key, required this.state});
 
   @override
   Widget build(BuildContext context) {
-    final state = widget.state;
-    final isPanelPhase = _panelPhases.contains(state.phase);
-    final showPanel = isPanelPhase && !_collapsed;
-    final isSelecting = state.phase == MapGamePhase.selectStart ||
-        state.phase == MapGamePhase.playerTurn;
-
-    return LayoutBuilder(
-      builder: (context, c) {
-        final panelW = (c.maxWidth * 0.40).clamp(280.0, 440.0);
-        return Stack(
-          children: [
-            // Full-screen map.
-            Positioned.fill(
-              child: _MapArea(
-                state: state,
-                hoveredContinent: widget.hoveredContinent,
-                onHover: widget.onHover,
-              ),
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: ClipRect(
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
+              child: Container(color: const Color(0xFF0A0205).withAlpha(165)),
             ),
-
-            // Top header overlay.
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: _HeaderOverlay(state: state),
-            ),
-
-            // Bottom-centre instruction chip while choosing a continent.
-            if (isSelecting)
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 14,
-                child: Center(child: _InstructionChip(state: state)),
-              ),
-
-            // Right collapsible action panel.
-            AnimatedPositioned(
-              duration: const Duration(milliseconds: 240),
-              curve: Curves.easeOutCubic,
-              top: 0,
-              bottom: 0,
-              width: panelW,
-              right: showPanel ? 0 : -panelW,
-              child: _SidePanel(state: state),
-            ),
-
-            // Collapse / expand handle (only during panel phases).
-            if (isPanelPhase)
-              AnimatedPositioned(
-                duration: const Duration(milliseconds: 240),
-                curve: Curves.easeOutCubic,
-                top: c.maxHeight / 2 - 28,
-                right: showPanel ? panelW : 0,
-                child: _PanelHandle(
-                  collapsed: !showPanel,
-                  onTap: () => setState(() => _collapsed = !_collapsed),
+          ),
+        ),
+        SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 58, 24, 16),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 620),
+                child: SingleChildScrollView(
+                  child: switch (state.phase) {
+                    MapGamePhase.playerQuestion => _QuestionPanel(state: state),
+                    MapGamePhase.tiebreakerQuestion => _TiebreakerPanel(state: state),
+                    MapGamePhase.result => _ResultPanel(state: state),
+                    MapGamePhase.gameOver => _GameOverPanel(state: state),
+                    _ => const SizedBox.shrink(),
+                  },
                 ),
               ),
-          ],
-        );
-      },
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -361,35 +362,6 @@ class _InstructionChip extends StatelessWidget {
   }
 }
 
-// ── Collapse / expand handle ────────────────────────────────────────────────────
-
-class _PanelHandle extends StatelessWidget {
-  final bool collapsed;
-  final VoidCallback onTap;
-  const _PanelHandle({required this.collapsed, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 26,
-        height: 56,
-        decoration: BoxDecoration(
-          color: Colors.black.withAlpha(170),
-          borderRadius: const BorderRadius.horizontal(left: Radius.circular(12)),
-          border: Border.all(color: Colors.white.withAlpha(30)),
-        ),
-        child: Icon(
-          collapsed ? Icons.chevron_left : Icons.chevron_right,
-          color: Colors.white70,
-          size: 22,
-        ),
-      ),
-    );
-  }
-}
-
 // ── Interactive map ─────────────────────────────────────────────────────────────
 
 class _MapArea extends ConsumerWidget {
@@ -457,48 +429,6 @@ class _MapArea extends ConsumerWidget {
   }
 }
 
-// ── Side panel (phase-adaptive) ─────────────────────────────────────────────────
-
-class _SidePanel extends StatelessWidget {
-  final MapGameState state;
-  const _SidePanel({required this.state});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFF1A0008).withAlpha(235),
-        borderRadius: const BorderRadius.horizontal(left: Radius.circular(24)),
-        border: Border(left: BorderSide(color: Colors.white.withAlpha(25))),
-      ),
-      child: SafeArea(
-        left: false,
-        child: LayoutBuilder(
-          builder: (context, c) => SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minHeight: c.maxHeight),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  switch (state.phase) {
-                    MapGamePhase.playerQuestion => _QuestionPanel(state: state),
-                    MapGamePhase.tiebreakerQuestion => _TiebreakerPanel(state: state),
-                    MapGamePhase.result => _ResultPanel(state: state),
-                    MapGamePhase.gameOver => _GameOverPanel(state: state),
-                    _ => const SizedBox.shrink(),
-                  },
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 // ── Panel: playerQuestion ─────────────────────────────────────────────────────
 
 class _QuestionPanel extends ConsumerWidget {
@@ -517,23 +447,17 @@ class _QuestionPanel extends ConsumerWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('$targetName için mücadele!',
-            style: const TextStyle(color: Color(0xFFFFD54F), fontSize: 12, fontWeight: FontWeight.w700),
-            textAlign: TextAlign.center),
-        const SizedBox(height: 8),
+        _TargetBadge(text: '$targetName için mücadele'),
+        const SizedBox(height: 22),
         Text(q.text,
-            style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
+            style: const TextStyle(
+                color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700, height: 1.3),
             textAlign: TextAlign.center),
-        const SizedBox(height: 14),
-        ...List.generate(q.options.length, (i) {
-          return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            child: _AnswerButton(
-              label: q.options[i],
-              onTap: () => ref.read(mapGameProvider.notifier).answerQuestion(i),
-            ),
-          );
-        }),
+        const SizedBox(height: 22),
+        _AnswerGrid(
+          labels: q.options,
+          onSelect: (i) => ref.read(mapGameProvider.notifier).answerQuestion(i),
+        ),
       ],
     );
   }
@@ -554,23 +478,17 @@ class _TiebreakerPanel extends ConsumerWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Text('KAPIŞMA! En yakın cevabı bul',
-            style: TextStyle(color: Color(0xFFFFD700), fontSize: 12, fontWeight: FontWeight.w700),
-            textAlign: TextAlign.center),
-        const SizedBox(height: 8),
+        const _TargetBadge(text: 'KAPIŞMA! En yakın cevabı bul'),
+        const SizedBox(height: 22),
         Text(tb.text,
-            style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
+            style: const TextStyle(
+                color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700, height: 1.3),
             textAlign: TextAlign.center),
-        const SizedBox(height: 14),
-        ...List.generate(tb.options.length, (i) {
-          return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            child: _AnswerButton(
-              label: tb.options[i].toString(),
-              onTap: () => ref.read(mapGameProvider.notifier).answerTiebreaker(i),
-            ),
-          );
-        }),
+        const SizedBox(height: 22),
+        _AnswerGrid(
+          labels: tb.options.map((o) => o.toString()).toList(),
+          onSelect: (i) => ref.read(mapGameProvider.notifier).answerTiebreaker(i),
+        ),
       ],
     );
   }
@@ -593,21 +511,21 @@ class _ResultPanel extends ConsumerWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(icon, style: const TextStyle(fontSize: 34)),
-        const SizedBox(height: 8),
-        Text(state.resultMessage ?? '',
-            style: TextStyle(color: color, fontSize: 14, fontWeight: FontWeight.w600),
-            textAlign: TextAlign.center),
+        Text(icon, style: const TextStyle(fontSize: 52)),
         const SizedBox(height: 16),
+        Text(state.resultMessage ?? '',
+            style: TextStyle(color: color, fontSize: 17, fontWeight: FontWeight.w600, height: 1.35),
+            textAlign: TextAlign.center),
+        const SizedBox(height: 28),
         SizedBox(
-          width: double.infinity,
+          width: 260,
           child: FilledButton(
             onPressed: () => ref.read(mapGameProvider.notifier).nextTurn(),
             style: FilledButton.styleFrom(
               backgroundColor: const Color(0xFFCC1020),
-              padding: const EdgeInsets.symmetric(vertical: 12),
+              padding: const EdgeInsets.symmetric(vertical: 15),
             ),
-            child: const Text('Devam'),
+            child: const Text('Devam', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
           ),
         ),
       ],
@@ -627,41 +545,107 @@ class _GameOverPanel extends ConsumerWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(playerWon ? '🏆' : '💀', style: const TextStyle(fontSize: 40)),
-        const SizedBox(height: 8),
+        Text(playerWon ? '🏆' : '💀', style: const TextStyle(fontSize: 64)),
+        const SizedBox(height: 14),
         Text(
           playerWon ? 'Dünya Hakimiyeti!' : 'Yenildin!',
           style: TextStyle(
             color: playerWon ? const Color(0xFFE6C878) : _kAiColor,
-            fontSize: 22,
+            fontSize: 28,
             fontWeight: FontWeight.w900,
           ),
           textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 16),
-        FilledButton(
-          onPressed: () => ref.read(mapGameProvider.notifier).restart(),
-          style: FilledButton.styleFrom(
-            backgroundColor: const Color(0xFFCC1020),
-            padding: const EdgeInsets.symmetric(vertical: 12),
-          ),
-          child: const Text('Tekrar Oyna'),
-        ),
-        const SizedBox(height: 8),
-        OutlinedButton(
-          onPressed: () => context.pop(),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: Colors.white70,
-            side: const BorderSide(color: Colors.white30),
-          ),
-          child: const Text('Menüye Dön'),
+        const SizedBox(height: 28),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            OutlinedButton(
+              onPressed: () => context.pop(),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.white70,
+                side: const BorderSide(color: Colors.white30),
+                padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
+              ),
+              child: const Text('Menü'),
+            ),
+            const SizedBox(width: 14),
+            FilledButton(
+              onPressed: () => ref.read(mapGameProvider.notifier).restart(),
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFFCC1020),
+                padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+              ),
+              child: const Text('Tekrar Oyna', style: TextStyle(fontWeight: FontWeight.w700)),
+            ),
+          ],
         ),
       ],
     );
   }
 }
 
-// ── Shared: AnswerButton ──────────────────────────────────────────────────────
+/// Small gold pill used as the focal-overlay heading.
+class _TargetBadge extends StatelessWidget {
+  final String text;
+  const _TargetBadge({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+        decoration: BoxDecoration(
+          color: const Color(0xFFE6C878).withAlpha(28),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0xFFE6C878).withAlpha(90)),
+        ),
+        child: Text(
+          text.toUpperCase(),
+          style: const TextStyle(
+            color: Color(0xFFEBCF86),
+            fontSize: 12,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0.6,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Shared: answer grid + button ──────────────────────────────────────────────
+
+/// Lays answer options out two-per-row so all four fit in landscape height.
+class _AnswerGrid extends StatelessWidget {
+  final List<String> labels;
+  final void Function(int) onSelect;
+  const _AnswerGrid({required this.labels, required this.onSelect});
+
+  @override
+  Widget build(BuildContext context) {
+    Widget cell(int i) =>
+        Expanded(child: _AnswerButton(label: labels[i], onTap: () => onSelect(i)));
+
+    final rows = <Widget>[];
+    for (var i = 0; i < labels.length; i += 2) {
+      // IntrinsicHeight bounds the row so the two cells can share an equal
+      // height (CrossAxisAlignment.stretch is illegal in an unbounded scroll).
+      rows.add(IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            cell(i),
+            const SizedBox(width: 12),
+            if (i + 1 < labels.length) cell(i + 1) else const Spacer(),
+          ],
+        ),
+      ));
+      if (i + 2 < labels.length) rows.add(const SizedBox(height: 12));
+    }
+    return Column(children: rows);
+  }
+}
 
 class _AnswerButton extends StatelessWidget {
   final Object label;
@@ -673,15 +657,16 @@ class _AnswerButton extends StatelessWidget {
     return FilledButton(
       onPressed: onTap,
       style: FilledButton.styleFrom(
-        backgroundColor: Colors.white.withAlpha(28),
+        backgroundColor: const Color(0xFF241419).withAlpha(235),
         foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 12),
+        padding: const EdgeInsets.symmetric(vertical: 17, horizontal: 16),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: const BorderSide(color: Colors.white24),
+          borderRadius: BorderRadius.circular(14),
+          side: BorderSide(color: Colors.white.withAlpha(36)),
         ),
       ),
-      child: Text('$label', style: const TextStyle(fontSize: 14)),
+      child: Text('$label',
+          style: const TextStyle(fontSize: 15.5, fontWeight: FontWeight.w600)),
     );
   }
 }
