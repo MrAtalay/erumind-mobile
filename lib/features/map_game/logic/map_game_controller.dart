@@ -8,7 +8,7 @@ import '../data/tiebreaker_questions.dart';
 import 'map_game_state.dart';
 
 final mapGameProvider =
-    AsyncNotifierProvider<MapGameController, MapGameState>(MapGameController.new);
+    AsyncNotifierProvider.autoDispose<MapGameController, MapGameState>(MapGameController.new);
 
 class MapGameController extends AsyncNotifier<MapGameState> {
   final _rng = Random();

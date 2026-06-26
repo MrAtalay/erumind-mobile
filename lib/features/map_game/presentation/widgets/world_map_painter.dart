@@ -21,11 +21,14 @@ class WorldMapPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    // Draw ocean background
-    canvas.drawRect(
-      Offset.zero & size,
-      Paint()..color = const Color(0xFF1A3A5C),
-    );
+    // Ocean background — gradient from deep teal to navy
+    final oceanPaint = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [const Color(0xFF0E6E8C), const Color(0xFF09405A)],
+      ).createShader(Offset.zero & size);
+    canvas.drawRect(Offset.zero & size, oceanPaint);
 
     for (final c in kContinents) {
       final owner = ownership[c.id] ?? Owner.neutral;
@@ -59,13 +62,15 @@ class WorldMapPainter extends CustomPainter {
         ..color = fill.withValues(alpha: opacity)
         ..style = PaintingStyle.fill);
 
-      // Border
+      // Border — thicker for owned/reachable, gold-tinted highlight
       final strokeColor = isHighlighted
-          ? Colors.white
-          : isReachable
-              ? Colors.white.withAlpha(180)
-              : Colors.white.withAlpha(60);
-      final strokeWidth = isHighlighted ? 2.5 : (isReachable ? 1.5 : 0.8);
+          ? const Color(0xFFFFD700)          // gold when selected
+          : isOwned
+              ? Colors.white.withAlpha(200)
+              : isReachable
+                  ? Colors.white.withAlpha(160)
+                  : Colors.white.withAlpha(55);
+      final strokeWidth = isHighlighted ? 3.0 : (isOwned || isReachable ? 1.8 : 0.7);
 
       canvas.drawPath(path, Paint()
         ..color = strokeColor
