@@ -73,6 +73,7 @@ class MapGameController extends AsyncNotifier<MapGameState> {
 
     final playerCorrect = result.isCorrect;
     final target = s.playerTarget!;
+    final targetName = continentById(target)?.name ?? target;
     final aiTarget = s.aiTarget;
     final contested = aiTarget == target;
 
@@ -99,13 +100,13 @@ class MapGameController extends AsyncNotifier<MapGameState> {
           // AI wrong → player wins
           ownership[target] = Owner.player;
           roundWinner = Owner.player;
-          msg = 'Rakip yanıldı — $target ele geçirildi!';
+          msg = 'Rakip yanıldı — $targetName ele geçirildi!';
         }
       } else {
         // Uncontested: player wins their target
         ownership[target] = Owner.player;
         roundWinner = Owner.player;
-        msg = 'Doğru! $target ele geçirildi.';
+        msg = 'Doğru! $targetName ele geçirildi.';
         // AI also resolves its own target
         ownership = _resolveAi(ownership, aiTarget);
       }
@@ -115,7 +116,7 @@ class MapGameController extends AsyncNotifier<MapGameState> {
         // AI auto-wins the contested continent
         ownership[target] = Owner.ai;
         roundWinner = Owner.ai;
-        msg = 'Yanlış! Rakip $target\'ı ele geçirdi.';
+        msg = 'Yanlış! Rakip $targetName bölgesini ele geçirdi.';
       } else {
         msg = 'Yanlış! Tur geçildi.';
         ownership = _resolveAi(ownership, aiTarget);
@@ -151,6 +152,7 @@ class MapGameController extends AsyncNotifier<MapGameState> {
     final aiDist = (aiChoice - correct).abs();
 
     final target = s.playerTarget!;
+    final targetName = continentById(target)?.name ?? target;
     Map<String, Owner> ownership = Map.from(s.ownership);
     Owner? roundWinner;
     String msg;
@@ -158,13 +160,16 @@ class MapGameController extends AsyncNotifier<MapGameState> {
     if (playerDist < aiDist) {
       ownership[target] = Owner.player;
       roundWinner = Owner.player;
-      msg = '$target ele geçirildi! ($playerChoice ↔ $aiDist, doğru: $correct)';
+      msg = 'Doğru cevap $correct. Sen $playerChoice, rakip $aiChoice dedi — '
+          '$targetName senin!';
     } else if (aiDist < playerDist) {
       ownership[target] = Owner.ai;
       roundWinner = Owner.ai;
-      msg = 'Rakip kazandı! ($aiChoice ↔ $playerDist, doğru: $correct)';
+      msg = 'Doğru cevap $correct. Rakip $aiChoice ile daha yakındı — '
+          '$targetName rakibe gitti.';
     } else {
-      msg = 'Beraberlik! ($playerChoice = $aiChoice, doğru: $correct) Sonraki turda tekrar!';
+      msg = 'Beraberlik! İkiniz de $playerChoice dediniz (doğru: $correct). '
+          'Sonraki turda tekrar!';
     }
 
     final gameWinner = _checkWin(ownership);

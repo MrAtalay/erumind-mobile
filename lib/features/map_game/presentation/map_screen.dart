@@ -76,8 +76,12 @@ class _GameContent extends ConsumerWidget {
             ),
           ),
         ),
-        const Spacer(),
-        _BottomPanel(state: state),
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.only(top: 14, bottom: 16),
+            child: _BottomPanel(state: state),
+          ),
+        ),
       ],
     );
   }
@@ -209,11 +213,13 @@ class _BottomPanel extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Container(
-      constraints: const BoxConstraints(minHeight: 130),
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+      width: double.infinity,
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
       decoration: BoxDecoration(
-        color: Colors.black.withAlpha(120),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        color: Colors.black.withAlpha(110),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withAlpha(20)),
       ),
       child: switch (state.phase) {
         MapGamePhase.selectStart       => _StartInstruction(),
@@ -357,7 +363,8 @@ class _ResultPanel extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final won = state.roundWinner == Owner.player;
     final lost = state.roundWinner == Owner.ai;
-    final icon = won ? '🌍' : lost ? '😬' : '🤝';
+    final isDraw = (state.resultMessage ?? '').startsWith('Beraberlik');
+    final icon = won ? '🌍' : lost ? '😬' : isDraw ? '🤝' : '😐';
     final color = won ? const Color(0xFF4ADE80) : lost ? const Color(0xFFFF6B6B) : Colors.white70;
 
     return Column(
