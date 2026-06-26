@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../data/continent_defs.dart';
+import '../data/world_shapes.dart';
 import '../logic/map_game_controller.dart';
 import '../logic/map_game_state.dart';
 import 'widgets/world_map_painter.dart';
@@ -64,7 +65,18 @@ class _GameContent extends ConsumerWidget {
     return Column(
       children: [
         _TopBar(state: state),
-        Expanded(child: _MapArea(state: state, hoveredContinent: hoveredContinent, onHover: onHover)),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          child: AspectRatio(
+            aspectRatio: kMapAspect,
+            child: _MapArea(
+              state: state,
+              hoveredContinent: hoveredContinent,
+              onHover: onHover,
+            ),
+          ),
+        ),
+        const Spacer(),
         _BottomPanel(state: state),
       ],
     );
@@ -148,12 +160,10 @@ class _MapArea extends ConsumerWidget {
     final reachable = _isInteractive ? reachableContinentsFor(state) : const <String>{};
     final highlighted = state.phase == MapGamePhase.playerTurn ? hoveredContinent : null;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final size = constraints.biggest;
-          return GestureDetector(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final size = constraints.biggest;
+        return GestureDetector(
             onTapUp: !_isInteractive ? null : (details) {
               final id = WorldMapPainter.continentAt(details.localPosition, size);
               if (id == null) return;
@@ -177,7 +187,6 @@ class _MapArea extends ConsumerWidget {
             ),
           );
         },
-      ),
     );
   }
 
@@ -247,7 +256,7 @@ class _TurnInstruction extends StatelessWidget {
     final reachable = reachableContinentsFor(state);
     final hint = reachable.isEmpty
         ? 'Ulaşabileceğin kıta yok!'
-        : 'Yeşil ile işaretli bitişik kıtalardan birini seç';
+        : 'Saldırmak için altın çerçeveli komşu bir kıtaya dokun';
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [

@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
 
 import '../../data/continent_defs.dart';
+import '../../data/world_shapes.dart';
 import '../../logic/map_game_state.dart';
 
 class WorldMapPainter extends CustomPainter {
   final Map<String, Owner> ownership;
   final Set<String> reachable;
-  final String? highlighted; // continent being hovered/selected
+  final String? highlighted;
   final bool dimUnreachable;
 
   static const _playerColor = Color(0xFF4ADE80);
-  static const _aiColor = Color(0xFFFF6B6B);
+  static const _aiColor = Color(0xFFF87171);
 
   const WorldMapPainter({
     required this.ownership,
@@ -21,97 +22,120 @@ class WorldMapPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    // Ocean background — gradient from deep teal to navy
+    final rect = mapRect(size);
+    final rrect = RRect.fromRectAndRadius(rect, const Radius.circular(16));
+
+    // Ocean panel — teal→navy gradient, only within the map rect so the
+    // surrounding area shows the screen's themed background.
     final oceanPaint = Paint()
-      ..shader = LinearGradient(
+      ..shader = const LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-        colors: [const Color(0xFF0E6E8C), const Color(0xFF09405A)],
-      ).createShader(Offset.zero & size);
-    canvas.drawRect(Offset.zero & size, oceanPaint);
+        colors: [Color(0xFF0E6E8C), Color(0xFF09405A)],
+      ).createShader(rect);
+    canvas.drawRRect(rrect, oceanPaint);
 
-    for (final c in kContinents) {
-      final owner = ownership[c.id] ?? Owner.neutral;
-      final isHighlighted = c.id == highlighted;
-      final isReachable = reachable.contains(c.id);
+    // Clip landmasses to the rounded ocean panel.
+    canvas.save();
+    canvas.clipRRect(rrect);
+
+    // Draw landmasses, grouped by continent so colours read as one mass.
+    for (final shape in kWorldShapes) {
+      final owner = ownership[shape.continentId] ?? Owner.neutral;
+      final def = continentById(shape.continentId);
+      final isHighlighted = shape.continentId == highlighted;
+      final isReachable = reachable.contains(shape.continentId);
       final isOwned = owner != Owner.neutral;
 
-      final path = _makePath(c.polygon, size);
-
-      // Colour
-      Color fill = switch (owner) {
+      final fill = switch (owner) {
         Owner.player  => _playerColor,
         Owner.ai      => _aiColor,
-        Owner.neutral => c.color,
+        Owner.neutral => def?.color ?? const Color(0xFF888888),
       };
 
       double opacity;
       if (isHighlighted) {
         opacity = 1.0;
       } else if (isOwned) {
-        opacity = 0.85;
+        opacity = 0.92;
       } else if (isReachable) {
-        opacity = 0.80;
+        opacity = 0.85;
       } else if (dimUnreachable) {
-        opacity = 0.30;
+        opacity = 0.42;
       } else {
-        opacity = 0.55;
+        opacity = 0.72;
       }
 
-      canvas.drawPath(path, Paint()
-        ..color = fill.withValues(alpha: opacity)
-        ..style = PaintingStyle.fill);
+      final path = _shapePath(shape.points, rect);
 
-      // Border — thicker for owned/reachable, gold-tinted highlight
-      final strokeColor = isHighlighted
-          ? const Color(0xFFFFD700)          // gold when selected
-          : isOwned
-              ? Colors.white.withAlpha(200)
-              : isReachable
-                  ? Colors.white.withAlpha(160)
-                  : Colors.white.withAlpha(55);
-      final strokeWidth = isHighlighted ? 3.0 : (isOwned || isReachable ? 1.8 : 0.7);
-
-      canvas.drawPath(path, Paint()
-        ..color = strokeColor
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = strokeWidth);
-
-      // Label
-      final labelPx = Offset(
-        c.labelOffset.dx * size.width,
-        c.labelOffset.dy * size.height,
+      canvas.drawPath(
+        path,
+        Paint()
+          ..color = fill.withValues(alpha: opacity)
+          ..style = PaintingStyle.fill,
       );
-      final labelColor = Colors.white.withValues(
-        alpha: isHighlighted || isOwned || isReachable ? 1.0 : 0.55,
+
+      // Per-polygon border. Reachable continents get a bright gold edge so the
+      // player can see where they may attack; others stay faint coastline lines.
+      final borderColor = (isHighlighted || isReachable)
+          ? const Color(0xFFFFD54F)
+          : Colors.white.withAlpha(65);
+      canvas.drawPath(
+        path,
+        Paint()
+          ..color = borderColor
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = (isHighlighted || isReachable) ? 1.4 : 0.5
+          ..strokeJoin = StrokeJoin.round,
       );
-      final labelSize = switch (c.id) {
-        'europe'     => 8.0,
-        'antarctica' => 8.5,
-        'australia'  => 9.5,
-        _            => 10.5,
-      };
-      _drawLabel(canvas, c.name, labelPx, labelColor, size.width * 0.16,
-          fontSize: labelSize);
     }
+
+    canvas.restore(); // end clip
+
+    // Panel frame.
+    canvas.drawRRect(
+      rrect,
+      Paint()
+        ..color = Colors.white.withAlpha(40)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5,
+    );
+
+    // Labels — one per continent, at the centroid of its largest polygon.
+    _labelCentroids.forEach((contId, normCentroid) {
+      final owner = ownership[contId] ?? Owner.neutral;
+      final def = continentById(contId);
+      if (def == null) return;
+      final isHighlighted = contId == highlighted;
+      final isReachable = reachable.contains(contId);
+      final visible = isHighlighted || owner != Owner.neutral || isReachable;
+      final center = Offset(
+        rect.left + normCentroid.dx * rect.width,
+        rect.top + normCentroid.dy * rect.height,
+      );
+      _drawLabel(
+        canvas,
+        def.name,
+        center,
+        Colors.white.withValues(alpha: visible ? 1.0 : 0.7),
+        rect.width * 0.18,
+      );
+    });
   }
 
-  void _drawLabel(
-    Canvas canvas,
-    String text,
-    Offset center,
-    Color color,
-    double maxWidth, {
-    double fontSize = 10,
-  }) {
+  void _drawLabel(Canvas canvas, String text, Offset center, Color color, double maxWidth) {
     final tp = TextPainter(
       text: TextSpan(
         text: text,
         style: TextStyle(
           color: color,
-          fontSize: fontSize,
-          fontWeight: FontWeight.w700,
-          shadows: const [Shadow(color: Colors.black54, blurRadius: 3)],
+          fontSize: 9.5,
+          fontWeight: FontWeight.w800,
+          height: 1.05,
+          shadows: const [
+            Shadow(color: Colors.black, blurRadius: 2),
+            Shadow(color: Colors.black54, blurRadius: 5),
+          ],
         ),
       ),
       textAlign: TextAlign.center,
@@ -120,21 +144,39 @@ class WorldMapPainter extends CustomPainter {
     tp.paint(canvas, center - Offset(tp.width / 2, tp.height / 2));
   }
 
-  static Path _makePath(List<Offset> polygon, Size size) {
+  static Path _shapePath(List<Offset> pts, Rect rect) {
     final path = Path();
-    if (polygon.isEmpty) return path;
-    path.moveTo(polygon.first.dx * size.width, polygon.first.dy * size.height);
-    for (final p in polygon.skip(1)) {
-      path.lineTo(p.dx * size.width, p.dy * size.height);
+    if (pts.isEmpty) return path;
+    Offset px(Offset n) => Offset(rect.left + n.dx * rect.width, rect.top + n.dy * rect.height);
+    final first = px(pts.first);
+    path.moveTo(first.dx, first.dy);
+    for (final p in pts.skip(1)) {
+      final q = px(p);
+      path.lineTo(q.dx, q.dy);
     }
     path.close();
     return path;
   }
 
+  /// The rect (within [size]) the world map occupies, preserving aspect ratio.
+  static Rect mapRect(Size size) {
+    final dispW = size.width <= size.height * kMapAspect
+        ? size.width
+        : size.height * kMapAspect;
+    final dispH = dispW / kMapAspect;
+    final left = (size.width - dispW) / 2;
+    final top = (size.height - dispH) / 2;
+    return Rect.fromLTWH(left, top, dispW, dispH);
+  }
+
   /// Returns the continent id at [position] within [size], or null.
   static String? continentAt(Offset position, Size size) {
-    for (final c in kContinents.reversed) {
-      if (_makePath(c.polygon, size).contains(position)) return c.id;
+    final rect = mapRect(size);
+    // Reverse so smaller islands drawn later win ties; continents overlap rarely.
+    for (final shape in kWorldShapes.reversed) {
+      if (_shapePath(shape.points, rect).contains(position)) {
+        return shape.continentId;
+      }
     }
     return null;
   }
@@ -145,4 +187,39 @@ class WorldMapPainter extends CustomPainter {
       old.reachable != reachable ||
       old.highlighted != highlighted ||
       old.dimUnreachable != dimUnreachable;
+}
+
+/// Centroid (normalised 0..1) of each continent's largest polygon, for labels.
+final Map<String, Offset> _labelCentroids = _computeLabelCentroids();
+
+Map<String, Offset> _computeLabelCentroids() {
+  final bestArea = <String, double>{};
+  final result = <String, Offset>{};
+  for (final shape in kWorldShapes) {
+    final area = _polyArea(shape.points);
+    if (area > (bestArea[shape.continentId] ?? 0)) {
+      bestArea[shape.continentId] = area;
+      result[shape.continentId] = _centroid(shape.points);
+    }
+  }
+  return result;
+}
+
+double _polyArea(List<Offset> pts) {
+  double a = 0;
+  for (var i = 0; i < pts.length; i++) {
+    final p1 = pts[i];
+    final p2 = pts[(i + 1) % pts.length];
+    a += p1.dx * p2.dy - p2.dx * p1.dy;
+  }
+  return a.abs() / 2;
+}
+
+Offset _centroid(List<Offset> pts) {
+  double cx = 0, cy = 0;
+  for (final p in pts) {
+    cx += p.dx;
+    cy += p.dy;
+  }
+  return Offset(cx / pts.length, cy / pts.length);
 }
