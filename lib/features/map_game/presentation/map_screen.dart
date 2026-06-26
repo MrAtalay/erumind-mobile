@@ -236,33 +236,25 @@ class _ScorePill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(16),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
         child: Container(
-          padding: const EdgeInsets.fromLTRB(14, 8, 14, 9),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: Colors.black.withAlpha(70),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white.withAlpha(28)),
+            color: Colors.black.withAlpha(64),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.white.withAlpha(26)),
           ),
-          child: Column(
+          // One compact row: counts flank a slim world-control bar.
+          child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _Side(label: 'Sen', count: state.playerCount, color: _kPlayerColor),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    child: Text('vs',
-                        style: TextStyle(color: Colors.white.withAlpha(120), fontSize: 11, fontWeight: FontWeight.w600)),
-                  ),
-                  _Side(label: 'Rakip', count: state.aiCount, color: _kAiColor, mirrored: true),
-                ],
-              ),
-              const SizedBox(height: 7),
-              SizedBox(width: 196, child: _WorldControlBar(state: state)),
+              _Side(label: 'Sen', count: state.playerCount, color: _kPlayerColor),
+              const SizedBox(width: 11),
+              SizedBox(width: 88, child: _WorldControlBar(state: state)),
+              const SizedBox(width: 11),
+              _Side(label: 'Rakip', count: state.aiCount, color: _kAiColor, mirrored: true),
             ],
           ),
         ),
@@ -281,21 +273,21 @@ class _Side extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dot = Container(
-      width: 9,
-      height: 9,
+      width: 8,
+      height: 8,
       decoration: BoxDecoration(color: color, shape: BoxShape.circle),
     );
     final text = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text('$label ', style: TextStyle(color: Colors.white.withAlpha(190), fontWeight: FontWeight.w600, fontSize: 13)),
-        Text('$count', style: TextStyle(color: color, fontWeight: FontWeight.w800, fontSize: 16)),
-        Text('/7', style: TextStyle(color: Colors.white.withAlpha(90), fontWeight: FontWeight.w600, fontSize: 11)),
+        Text('$label ', style: TextStyle(color: Colors.white.withAlpha(185), fontWeight: FontWeight.w600, fontSize: 12)),
+        Text('$count', style: TextStyle(color: color, fontWeight: FontWeight.w800, fontSize: 15)),
+        Text('/7', style: TextStyle(color: Colors.white.withAlpha(85), fontWeight: FontWeight.w600, fontSize: 10)),
       ],
     );
     return Row(
       mainAxisSize: MainAxisSize.min,
-      children: mirrored ? [text, const SizedBox(width: 7), dot] : [dot, const SizedBox(width: 7), text],
+      children: mirrored ? [text, const SizedBox(width: 6), dot] : [dot, const SizedBox(width: 6), text],
     );
   }
 }

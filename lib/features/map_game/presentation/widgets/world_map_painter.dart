@@ -55,9 +55,9 @@ class WorldMapPainter extends CustomPainter {
       );
     }
 
-    // Pass 2 — flat continent fills. No internal country borders; a same-colour
-    // hairline seals the anti-alias seams between neighbouring polygons so each
-    // continent reads as one clean shape.
+    // Pass 2 — flat continent fills + a clean continent outline. The shapes are
+    // dissolved per continent, so the outline traces just the continent edge —
+    // no internal country borders.
     for (final shape in kWorldShapes) {
       final owner = ownership[shape.continentId] ?? Owner.neutral;
       final def = continentById(shape.continentId);
@@ -78,14 +78,32 @@ class WorldMapPainter extends CustomPainter {
               : 0.92;
 
       final path = _shapePath(shape.points, rect);
-      final fillColor = fill.withValues(alpha: opacity);
-      canvas.drawPath(path, Paint()..color = fillColor..style = PaintingStyle.fill);
       canvas.drawPath(
         path,
         Paint()
-          ..color = fillColor
+          ..color = fill.withValues(alpha: opacity)
+          ..style = PaintingStyle.fill,
+      );
+
+      // Continent outline.
+      final Color outline;
+      double outlineWidth;
+      if (isTarget) {
+        outline = const Color(0xFFE6C878);
+        outlineWidth = 1.6;
+      } else if (dimUnreachable && !isOwned) {
+        outline = Colors.white.withValues(alpha: 0.16);
+        outlineWidth = 0.9;
+      } else {
+        outline = Colors.white.withValues(alpha: isOwned ? 0.42 : 0.32);
+        outlineWidth = 1.1;
+      }
+      canvas.drawPath(
+        path,
+        Paint()
+          ..color = outline
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 0.8
+          ..strokeWidth = outlineWidth
           ..strokeJoin = StrokeJoin.round,
       );
     }

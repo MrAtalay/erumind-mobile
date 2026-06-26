@@ -9,6 +9,7 @@ Source data: Natural Earth 1:110m admin-0 countries (public domain).
 
 ```bash
 cd tool/map-shapes
+npm install polygon-clipping
 curl -sL "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_admin_0_countries.geojson" -o countries.geojson
 node gen_shapes.js
 cp world_shapes.dart ../../lib/features/map_game/data/world_shapes.dart
@@ -22,7 +23,10 @@ cp world_shapes.dart ../../lib/features/map_game/data/world_shapes.dart
 - Simplifies each ring with Douglas–Peucker and drops tiny islands.
 - Tags every polygon with one of the 7 game continents (Natural Earth's
   `CONTINENT` field; `Oceania` → `australia`, Russia forced to `asia` for
-  visual coherence) and emits `kWorldShapes` + `kMapAspect`.
+  visual coherence).
+- **Dissolves (unions) all countries within a continent** via
+  `polygon-clipping`, so each continent is one clean shape with no internal
+  country borders, then emits `kWorldShapes` + `kMapAspect`.
 
 `countries.geojson` is not committed (≈840 KB); re-download it with the curl
 line above before regenerating.
