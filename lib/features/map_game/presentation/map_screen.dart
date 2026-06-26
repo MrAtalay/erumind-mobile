@@ -1,3 +1,5 @@
+import 'dart:ui' show ImageFilter;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -172,44 +174,127 @@ class _GameContentState extends ConsumerState<_GameContent> {
 
 // ── Header overlay ──────────────────────────────────────────────────────────────
 
+const _kPlayerColor = Color(0xFF4FB68A);
+const _kAiColor = Color(0xFFC97A78);
+
 class _HeaderOverlay extends StatelessWidget {
   final MapGameState state;
   const _HeaderOverlay({required this.state});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Colors.black.withAlpha(130), Colors.black.withAlpha(0)],
-        ),
-      ),
-      padding: const EdgeInsets.fromLTRB(8, 4, 16, 10),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(10, 8, 10, 0),
+      child: Row(
         children: [
-          Row(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.white70),
-                onPressed: () => context.pop(),
-              ),
-              Expanded(
-                child: _CountChip(label: 'Sen', count: state.playerCount, color: const Color(0xFF4ADE80)),
-              ),
-              const Text('vs', style: TextStyle(color: Colors.white54, fontSize: 12)),
-              Expanded(
-                child: _CountChip(label: 'Rakip', count: state.aiCount, color: const Color(0xFFF87171)),
-              ),
-              const SizedBox(width: 48),
-            ],
-          ),
-          const SizedBox(height: 2),
-          _WorldControlBar(state: state),
+          _GlassButton(icon: Icons.arrow_back_rounded, onTap: () => context.pop()),
+          const Spacer(),
+          _ScorePill(state: state),
+          const Spacer(),
+          const SizedBox(width: 42),
         ],
       ),
+    );
+  }
+}
+
+/// Frosted circular icon button.
+class _GlassButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+  const _GlassButton({required this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipOval(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Material(
+          color: Colors.black.withAlpha(70),
+          shape: CircleBorder(side: BorderSide(color: Colors.white.withAlpha(28))),
+          child: InkWell(
+            onTap: onTap,
+            customBorder: const CircleBorder(),
+            child: SizedBox(
+              width: 42,
+              height: 42,
+              child: Icon(icon, color: Colors.white70, size: 22),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Frosted-glass scoreboard pill: faction counts + a slim world-control bar.
+class _ScorePill extends StatelessWidget {
+  final MapGameState state;
+  const _ScorePill({required this.state});
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(14, 8, 14, 9),
+          decoration: BoxDecoration(
+            color: Colors.black.withAlpha(70),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.white.withAlpha(28)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _Side(label: 'Sen', count: state.playerCount, color: _kPlayerColor),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: Text('vs',
+                        style: TextStyle(color: Colors.white.withAlpha(120), fontSize: 11, fontWeight: FontWeight.w600)),
+                  ),
+                  _Side(label: 'Rakip', count: state.aiCount, color: _kAiColor, mirrored: true),
+                ],
+              ),
+              const SizedBox(height: 7),
+              SizedBox(width: 196, child: _WorldControlBar(state: state)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _Side extends StatelessWidget {
+  final String label;
+  final int count;
+  final Color color;
+  final bool mirrored;
+  const _Side({required this.label, required this.count, required this.color, this.mirrored = false});
+
+  @override
+  Widget build(BuildContext context) {
+    final dot = Container(
+      width: 9,
+      height: 9,
+      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+    );
+    final text = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text('$label ', style: TextStyle(color: Colors.white.withAlpha(190), fontWeight: FontWeight.w600, fontSize: 13)),
+        Text('$count', style: TextStyle(color: color, fontWeight: FontWeight.w800, fontSize: 16)),
+        Text('/7', style: TextStyle(color: Colors.white.withAlpha(90), fontWeight: FontWeight.w600, fontSize: 11)),
+      ],
+    );
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: mirrored ? [text, const SizedBox(width: 7), dot] : [dot, const SizedBox(width: 7), text],
     );
   }
 }
@@ -222,17 +307,17 @@ class _WorldControlBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(6),
+      borderRadius: BorderRadius.circular(4),
       child: Row(
         children: [
           for (var i = 0; i < kContinents.length; i++) ...[
             Expanded(
               child: Container(
-                height: 7,
+                height: 6,
                 color: switch (state.ownership[kContinents[i].id] ?? Owner.neutral) {
-                  Owner.player => const Color(0xFF4ADE80),
-                  Owner.ai => const Color(0xFFF87171),
-                  Owner.neutral => Colors.white.withAlpha(40),
+                  Owner.player => _kPlayerColor,
+                  Owner.ai => _kAiColor,
+                  Owner.neutral => Colors.white.withAlpha(34),
                 },
               ),
             ),
@@ -240,31 +325,6 @@ class _WorldControlBar extends StatelessWidget {
           ],
         ],
       ),
-    );
-  }
-}
-
-class _CountChip extends StatelessWidget {
-  final String label;
-  final int count;
-  final Color color;
-  const _CountChip({required this.label, required this.count, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Container(
-          width: 11,
-          height: 11,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        ),
-        const SizedBox(width: 6),
-        Text('$label ', style: TextStyle(color: color, fontWeight: FontWeight.w700, fontSize: 14)),
-        Text('$count', style: TextStyle(color: color, fontWeight: FontWeight.w900, fontSize: 17)),
-        Text('/7', style: TextStyle(color: color.withValues(alpha: 0.6), fontWeight: FontWeight.w700, fontSize: 12)),
-      ],
     );
   }
 }
@@ -528,7 +588,7 @@ class _ResultPanel extends ConsumerWidget {
     final lost = state.roundWinner == Owner.ai;
     final isDraw = (state.resultMessage ?? '').startsWith('Beraberlik');
     final icon = won ? '🌍' : lost ? '😬' : isDraw ? '🤝' : '😐';
-    final color = won ? const Color(0xFF4ADE80) : lost ? const Color(0xFFFF6B6B) : Colors.white70;
+    final color = won ? _kPlayerColor : lost ? _kAiColor : Colors.white70;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -572,7 +632,7 @@ class _GameOverPanel extends ConsumerWidget {
         Text(
           playerWon ? 'Dünya Hakimiyeti!' : 'Yenildin!',
           style: TextStyle(
-            color: playerWon ? const Color(0xFFFFD700) : const Color(0xFFFF6B6B),
+            color: playerWon ? const Color(0xFFE6C878) : _kAiColor,
             fontSize: 22,
             fontWeight: FontWeight.w900,
           ),

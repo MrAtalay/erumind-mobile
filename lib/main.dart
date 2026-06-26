@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app.dart';
@@ -11,6 +12,11 @@ import 'services/storage_service.dart';
 Future<void> main() async {
   // Needed because we touch platform channels (Hive's path) before runApp.
   WidgetsFlutterBinding.ensureInitialized();
+
+  // The app is portrait-first; only the map game (Bil ve Fethet) flips to
+  // landscape, then restores portrait on exit. Locking here keeps every other
+  // screen upright regardless of the device's physical rotation.
+  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
   // Firebase foundation (Phase 6): connects the app to the erumind-app
   // project. Nothing reads from Firestore yet — FirestoreQuestionRepository

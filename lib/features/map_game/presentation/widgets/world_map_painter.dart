@@ -10,8 +10,9 @@ class WorldMapPainter extends CustomPainter {
   final String? highlighted;
   final bool dimUnreachable;
 
-  static const _playerColor = Color(0xFF4ADE80);
-  static const _aiColor = Color(0xFFF87171);
+  // Muted faction colours — calm emerald / clay rose instead of neon.
+  static const _playerColor = Color(0xFF4FB68A);
+  static const _aiColor = Color(0xFFC97A78);
 
   const WorldMapPainter({
     required this.ownership,
@@ -25,13 +26,12 @@ class WorldMapPainter extends CustomPainter {
     final rect = mapRect(size);
     final rrect = RRect.fromRectAndRadius(rect, const Radius.circular(16));
 
-    // Ocean panel — teal→navy gradient, only within the map rect so the
-    // surrounding area shows the screen's themed background.
+    // Ocean panel — deep, desaturated slate-navy (calm, low eye strain).
     final oceanPaint = Paint()
       ..shader = const LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-        colors: [Color(0xFF0E6E8C), Color(0xFF09405A)],
+        colors: [Color(0xFF143240), Color(0xFF0A1A24)],
       ).createShader(rect);
     canvas.drawRRect(rrect, oceanPaint);
 
@@ -57,13 +57,13 @@ class WorldMapPainter extends CustomPainter {
       if (isHighlighted) {
         opacity = 1.0;
       } else if (isOwned) {
-        opacity = 0.92;
+        opacity = 0.94;
       } else if (isReachable) {
-        opacity = 0.85;
+        opacity = 0.90;
       } else if (dimUnreachable) {
-        opacity = 0.42;
+        opacity = 0.45;
       } else {
-        opacity = 0.72;
+        opacity = 0.86;
       }
 
       final path = _shapePath(shape.points, rect);
@@ -75,28 +75,39 @@ class WorldMapPainter extends CustomPainter {
           ..style = PaintingStyle.fill,
       );
 
-      // Per-polygon border. Reachable continents get a bright gold edge so the
-      // player can see where they may attack; others stay faint coastline lines.
-      final borderColor = (isHighlighted || isReachable)
-          ? const Color(0xFFFFD54F)
-          : Colors.white.withAlpha(65);
+      // Per-polygon border. Reachable continents get a soft gold edge so the
+      // player sees where they may attack; everything else uses a faint dark
+      // coastline line (calmer than bright white grid lines).
+      final isTarget = isHighlighted || isReachable;
       canvas.drawPath(
         path,
         Paint()
-          ..color = borderColor
+          ..color = isTarget ? const Color(0xFFE6C878) : Colors.black.withAlpha(38)
           ..style = PaintingStyle.stroke
-          ..strokeWidth = (isHighlighted || isReachable) ? 1.4 : 0.5
+          ..strokeWidth = isTarget ? 1.4 : 0.5
           ..strokeJoin = StrokeJoin.round,
       );
     }
 
+    // Vignette — subtle darkening toward the edges adds depth and focus.
+    canvas.drawRect(
+      rect,
+      Paint()
+        ..shader = RadialGradient(
+          center: Alignment.center,
+          radius: 0.95,
+          colors: [Colors.transparent, Colors.black.withAlpha(70)],
+          stops: const [0.62, 1.0],
+        ).createShader(rect),
+    );
+
     canvas.restore(); // end clip
 
-    // Panel frame.
+    // Panel frame — subtle dark edge against the screen background.
     canvas.drawRRect(
       rrect,
       Paint()
-        ..color = Colors.white.withAlpha(40)
+        ..color = Colors.black.withAlpha(90)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.5,
     );
@@ -117,7 +128,7 @@ class WorldMapPainter extends CustomPainter {
         canvas,
         def.name,
         center,
-        Colors.white.withValues(alpha: visible ? 1.0 : 0.7),
+        Colors.white.withValues(alpha: visible ? 0.92 : 0.62),
         rect.width * 0.18,
       );
     });
@@ -130,12 +141,10 @@ class WorldMapPainter extends CustomPainter {
         style: TextStyle(
           color: color,
           fontSize: 9.5,
-          fontWeight: FontWeight.w800,
-          height: 1.05,
-          shadows: const [
-            Shadow(color: Colors.black, blurRadius: 2),
-            Shadow(color: Colors.black54, blurRadius: 5),
-          ],
+          fontWeight: FontWeight.w600,
+          height: 1.1,
+          letterSpacing: 0.3,
+          shadows: const [Shadow(color: Colors.black87, blurRadius: 4)],
         ),
       ),
       textAlign: TextAlign.center,
