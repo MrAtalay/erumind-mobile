@@ -20,6 +20,9 @@ class WorldMapPainter extends CustomPainter {
   final String? flashId;
   final double flashValue;
 
+  /// Show each continent's quiz category under its name (while choosing).
+  final bool showCategories;
+
   // Muted faction colours — calm emerald / clay rose instead of neon.
   static const _playerColor = Color(0xFF4FB68A);
   static const _aiColor = Color(0xFFC97A78);
@@ -34,6 +37,7 @@ class WorldMapPainter extends CustomPainter {
     this.attackPulse = 0,
     this.flashId,
     this.flashValue = 1,
+    this.showCategories = false,
   });
 
   @override
@@ -184,24 +188,48 @@ class WorldMapPainter extends CustomPainter {
         rect.left + normCentroid.dx * rect.width,
         rect.top + normCentroid.dy * rect.height,
       );
+      final showCat = showCategories;
       _drawLabel(
         canvas,
         def.name,
-        center,
+        showCat ? center.translate(0, -6) : center,
         Colors.white.withValues(alpha: visible ? 0.95 : 0.72),
         rect.width * 0.18,
       );
+      // Category sub-label so the player can pick by category.
+      if (showCat) {
+        final catLabel = kCategoryLabels[def.categoryId];
+        if (catLabel != null) {
+          _drawLabel(
+            canvas,
+            catLabel,
+            center.translate(0, 8),
+            const Color(0xFFE6C878).withValues(alpha: visible ? 0.9 : 0.55),
+            rect.width * 0.18,
+            fontSize: 8,
+            weight: FontWeight.w700,
+          );
+        }
+      }
     });
   }
 
-  void _drawLabel(Canvas canvas, String text, Offset center, Color color, double maxWidth) {
+  void _drawLabel(
+    Canvas canvas,
+    String text,
+    Offset center,
+    Color color,
+    double maxWidth, {
+    double fontSize = 9.5,
+    FontWeight weight = FontWeight.w600,
+  }) {
     final tp = TextPainter(
       text: TextSpan(
         text: text,
         style: TextStyle(
           color: color,
-          fontSize: 9.5,
-          fontWeight: FontWeight.w600,
+          fontSize: fontSize,
+          fontWeight: weight,
           height: 1.1,
           letterSpacing: 0.3,
           shadows: const [Shadow(color: Colors.black87, blurRadius: 4)],
@@ -284,7 +312,8 @@ class WorldMapPainter extends CustomPainter {
       old.attackingId != attackingId ||
       old.attackPulse != attackPulse ||
       old.flashId != flashId ||
-      old.flashValue != flashValue;
+      old.flashValue != flashValue ||
+      old.showCategories != showCategories;
 }
 
 /// Centroid (normalised 0..1) of each continent's largest polygon, for labels.

@@ -576,6 +576,7 @@ class _MapArea extends ConsumerWidget {
                 attackPulse: attackPulse,
                 flashId: flashId,
                 flashValue: flashValue,
+                showCategories: _isInteractive,
               ),
             ),
           ),
@@ -607,13 +608,19 @@ class _QuestionPanel extends ConsumerWidget {
 
     final targetDef = state.playerTarget != null ? continentById(state.playerTarget!) : null;
     final targetName = targetDef?.name.replaceAll('\n', ' ') ?? '';
+    final categoryLabel =
+        targetDef != null ? kCategoryLabels[targetDef.categoryId] : null;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _TargetBadge(text: '$targetName için mücadele'),
-        const SizedBox(height: 22),
+        _TargetBadge(text: categoryLabel ?? 'Soru'),
+        const SizedBox(height: 8),
+        Text('$targetName için mücadele',
+            style: TextStyle(color: Colors.white.withAlpha(150), fontSize: 12.5),
+            textAlign: TextAlign.center),
+        const SizedBox(height: 18),
         Text(q.text,
             style: const TextStyle(
                 color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700, height: 1.3),

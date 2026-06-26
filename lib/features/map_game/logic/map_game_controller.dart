@@ -13,10 +13,19 @@ final mapGameProvider =
 class MapGameController extends AsyncNotifier<MapGameState> {
   final _rng = Random();
 
-  @override
-  Future<MapGameState> build() async => MapGameState.initial();
+  /// Question ids already asked this game — used to avoid repeats.
+  final Set<String> _asked = {};
 
-  void restart() => state = AsyncData(MapGameState.initial());
+  @override
+  Future<MapGameState> build() async {
+    _asked.clear();
+    return MapGameState.initial();
+  }
+
+  void restart() {
+    _asked.clear();
+    state = AsyncData(MapGameState.initial());
+  }
 
   void _sfx(SoundEffect effect) {
     try {
@@ -55,7 +64,8 @@ class MapGameController extends AsyncNotifier<MapGameState> {
     if (s.ownership[continentId] == Owner.player) return;
     if (!_reachableByPlayer(s, continentId)) return;
 
-    final question = await _fetchRandomQuestion();
+    final categoryId = continentById(continentId)?.categoryId;
+    final question = await _fetchRandomQuestion(categoryId);
     if (question == null) return;
 
     state = AsyncData(s.copyWith(
@@ -257,11 +267,24 @@ class MapGameController extends AsyncNotifier<MapGameState> {
     return null;
   }
 
-  Future<dynamic> _fetchRandomQuestion() async {
+  Future<dynamic> _fetchRandomQuestion(String? categoryId) async {
     try {
       final all = await ref.read(questionRepositoryProvider).getQuestions();
       if (all.isEmpty) return null;
-      return all[_rng.nextInt(all.length)];
+
+      // Prefer the continent's category; fall back to all if it has none.
+      var pool = categoryId == null
+          ? all
+          : all.where((q) => q.categoryId == categoryId).toList();
+      if (pool.isEmpty) pool = all;
+
+      // Avoid repeats within a game; if the pool is exhausted, allow repeats.
+      final fresh = pool.where((q) => !_asked.contains(q.id)).toList();
+      final picks = fresh.isNotEmpty ? fresh : pool;
+
+      final q = picks[_rng.nextInt(picks.length)];
+      _asked.add(q.id);
+      return q;
     } catch (_) {
       return null;
     }
