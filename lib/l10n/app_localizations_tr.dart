@@ -166,4 +166,25 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get onboardingGetStarted => 'Başlayalım';
+
+  @override
+  String get menuSinglePlayer => 'Tek Başına';
+
+  @override
+  String get menuMultiplayer => 'Karşılıklı';
+
+  @override
+  String get menuPlayer => 'Oyuncu';
+
+  @override
+  String get menuTagline => 'Eğlenirken öğren';
+
+  @override
+  String get menuComingSoon => 'YAKINDA';
+
+  @override
+  String get settingsGameSection => 'Oyun';
+
+  @override
+  String get settingsHowToPlay => 'Nasıl oynanır?';
 }

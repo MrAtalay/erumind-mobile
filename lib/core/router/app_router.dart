@@ -24,6 +24,12 @@ GoRouter createAppRouter() => GoRouter(
           path: '/settings',
           builder: (context, state) => const SettingsScreen(),
         ),
+        GoRoute(
+          path: '/onboarding',
+          builder: (context, state) => OnboardingScreen(
+            onDone: () => Navigator.of(context).pop(),
+          ),
+        ),
       ],
     );
 

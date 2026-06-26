@@ -6,7 +6,9 @@ import '../../../data/models/answer_result.dart';
 import '../../../data/models/category.dart';
 import '../../../data/repositories/local_question_repository.dart';
 import '../../../data/repositories/question_repository.dart';
+import '../../../data/sources/local_question_source.dart';
 import '../../../features/lives/logic/lives_controller.dart';
+import '../../../features/settings/logic/settings_controller.dart';
 import '../../../features/mastery/logic/crowns.dart';
 import '../../../services/audio_service.dart';
 import '../../../services/storage_service.dart';
@@ -19,12 +21,15 @@ import 'scoring.dart';
 /// this single line for the Firestore-backed repository and nothing else in
 /// the game core changes — that's the whole point of the interface seam.
 final questionRepositoryProvider = Provider<QuestionRepository>((ref) {
-  return LocalQuestionRepository();
+  final locale = ref.watch(settingsControllerProvider)?.languageCode ?? 'tr';
+  return LocalQuestionRepository(
+    source: LocalQuestionSource(locale: locale),
+  );
 });
 
 /// The categories shown on the wheel.
 final categoriesProvider = FutureProvider<List<Category>>((ref) {
-  return ref.read(questionRepositoryProvider).getCategories();
+  return ref.watch(questionRepositoryProvider).getCategories();
 });
 
 /// How long the player has to answer each question. Overridable in tests.

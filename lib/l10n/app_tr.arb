@@ -50,5 +50,13 @@
   "onboardingBody3": "Potunu bankalayarak güvene al, ya da daha büyük bir çarpan için riske at. Yanlış cevap potunu değil, bir canını alır — oyun ancak canların biterse sona erer.",
   "onboardingSkip": "Geç",
   "onboardingNext": "İleri",
-  "onboardingGetStarted": "Başlayalım"
+  "onboardingGetStarted": "Başlayalım",
+
+  "menuSinglePlayer": "Tek Başına",
+  "menuMultiplayer": "Karşılıklı",
+  "menuPlayer": "Oyuncu",
+  "menuTagline": "Eğlenirken öğren",
+  "menuComingSoon": "YAKINDA",
+  "settingsGameSection": "Oyun",
+  "settingsHowToPlay": "Nasıl oynanır?"
 }

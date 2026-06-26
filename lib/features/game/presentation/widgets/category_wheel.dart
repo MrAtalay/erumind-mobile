@@ -93,9 +93,38 @@ class _CategoryWheelState extends State<CategoryWheel>
           ),
         ),
         const SizedBox(height: 24),
-        FilledButton(
-          onPressed: _controller.isAnimating ? null : _spin,
-          child: Text(widget.spinLabel),
+        GestureDetector(
+          onTap: _controller.isAnimating ? null : _spin,
+          child: Container(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 48, vertical: 14),
+            decoration: BoxDecoration(
+              color: _controller.isAnimating
+                  ? const Color(0x44CC1020)
+                  : const Color(0xFFCC1020),
+              borderRadius: BorderRadius.circular(30),
+              boxShadow: _controller.isAnimating
+                  ? null
+                  : [
+                      BoxShadow(
+                        color: const Color(0xFFCC1020).withAlpha(100),
+                        blurRadius: 14,
+                        offset: const Offset(0, 5),
+                      ),
+                    ],
+            ),
+            child: Text(
+              widget.spinLabel,
+              style: TextStyle(
+                color: _controller.isAnimating
+                    ? Colors.white38
+                    : Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ),
         ),
       ],
     );
@@ -121,23 +150,46 @@ class _WheelPainter extends CustomPainter {
     final fill = Paint()..style = PaintingStyle.fill;
     final rect = Rect.fromCircle(center: Offset.zero, radius: radius);
 
+    final divider = Paint()
+      ..style = PaintingStyle.stroke
+      ..color = Colors.white.withAlpha(60)
+      ..strokeWidth = 1.5;
+
     for (var i = 0; i < categories.length; i++) {
       // Sector i starts at the top (−π/2) and sweeps clockwise.
       final start = -math.pi / 2 + i * sweep;
       fill.color = Color(categories[i].colorValue);
       canvas.drawArc(rect, start, sweep, true, fill);
+      canvas.drawArc(rect, start, sweep, true, divider);
 
       _paintLabel(canvas, categories[i].name, start + sweep / 2, radius);
     }
     canvas.restore();
 
+    // Outer ring (frames the wheel against the dark background).
+    canvas.drawCircle(
+      center,
+      radius,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..color = Colors.white.withAlpha(50)
+        ..strokeWidth = 3,
+    );
+
     // Fixed pointer at the top (drawn after restore so it doesn't rotate).
     final pointer = Path()
-      ..moveTo(center.dx - 14, 2)
-      ..lineTo(center.dx + 14, 2)
-      ..lineTo(center.dx, 28)
+      ..moveTo(center.dx - 12, 0)
+      ..lineTo(center.dx + 12, 0)
+      ..lineTo(center.dx, 22)
       ..close();
-    canvas.drawPath(pointer, Paint()..color = Colors.black87);
+    canvas.drawPath(pointer, Paint()..color = Colors.white);
+    canvas.drawPath(
+      pointer,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..color = Colors.white.withAlpha(80)
+        ..strokeWidth = 1,
+    );
 
     // Centre hub.
     canvas.drawCircle(center, radius * 0.12, Paint()..color = Colors.white);

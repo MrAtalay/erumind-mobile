@@ -7,12 +7,17 @@ import '../models/question.dart';
 
 /// Reads and decodes the bundled `assets/questions.json` file.
 ///
-/// This is the only place that knows about the asset format. The decoded
-/// JSON is cached after the first read so repeated calls are cheap.
+/// Pass [locale] = 'en' to get English text/options; defaults to 'tr'.
+/// The raw JSON is cached; locale switching is handled by swapping the
+/// field used (text vs textEn, options vs optionsEn) before parsing.
 class LocalQuestionSource {
-  LocalQuestionSource({this.assetPath = 'assets/questions.json'});
+  LocalQuestionSource({
+    this.assetPath = 'assets/questions.json',
+    this.locale = 'tr',
+  });
 
   final String assetPath;
+  final String locale;
 
   Map<String, dynamic>? _cache;
 
@@ -29,12 +34,25 @@ class LocalQuestionSource {
   Future<List<Category>> loadCategories() async {
     final data = await _load();
     final list = (data['categories'] as List).cast<Map<String, dynamic>>();
-    return list.map(Category.fromJson).toList(growable: false);
+    return list.map((raw) {
+      if (locale != 'en') return Category.fromJson(raw);
+      return Category.fromJson({
+        ...raw,
+        'name': (raw['nameEn'] as String?) ?? raw['name'] as String,
+      });
+    }).toList(growable: false);
   }
 
   Future<List<Question>> loadQuestions() async {
     final data = await _load();
     final list = (data['questions'] as List).cast<Map<String, dynamic>>();
-    return list.map(Question.fromJson).toList(growable: false);
+    return list.map((raw) {
+      if (locale != 'en') return Question.fromJson(raw);
+      return Question.fromJson({
+        ...raw,
+        'text': (raw['textEn'] as String?) ?? raw['text'] as String,
+        'options': (raw['optionsEn'] as List?) ?? raw['options'],
+      });
+    }).toList(growable: false);
   }
 }

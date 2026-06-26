@@ -10,8 +10,12 @@ import '../logic/game_controller.dart';
 import '../logic/game_state.dart';
 import 'widgets/category_wheel.dart';
 
-/// The single-player game screen: a lives-gated lobby and the "Momentum" run
-/// (spin the wheel, answer, then bank or risk the pot).
+// ── Palette (same as MenuScreen) ──────────────────────────────────────────
+const _bgTop    = Color(0xFF7A0020);
+const _bgBot    = Color(0xFF2A0008);
+const _red      = Color(0xFFCC1020);
+const _redLight = Color(0xFFFF3040);
+
 class GameScreen extends ConsumerWidget {
   const GameScreen({super.key});
 
@@ -20,66 +24,222 @@ class GameScreen extends ConsumerWidget {
     final gameAsync = ref.watch(gameControllerProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('EruMind'),
-        actions: const [
-          Padding(padding: EdgeInsets.only(right: 16), child: _LivesBadge()),
-        ],
-      ),
-      body: SafeArea(
-        child: gameAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (err, _) => Center(child: Text('Something went wrong:\n$err')),
-          data: (state) => switch (state.phase) {
-            RunPhase.lobby => const _LobbyView(),
-            RunPhase.spinning => _SpinningView(state: state),
-            RunPhase.question || RunPhase.decision => _PlayfieldView(state: state),
-            RunPhase.finished => _ResultsView(state: state),
-          },
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [_bgTop, _bgBot],
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              _GameTopBar(gameAsync: gameAsync),
+              Expanded(
+                child: gameAsync.when(
+                  loading: () => const Center(
+                    child: CircularProgressIndicator(color: Colors.white),
+                  ),
+                  error: (err, _) => Center(
+                    child: Text('$err',
+                        style: const TextStyle(color: Colors.white70)),
+                  ),
+                  data: (state) => switch (state.phase) {
+                    RunPhase.lobby    => const _LobbyView(),
+                    RunPhase.spinning => _SpinningView(state: state),
+                    RunPhase.question ||
+                    RunPhase.decision => _PlayfieldView(state: state),
+                    RunPhase.finished => _ResultsView(state: state),
+                  },
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-/// Compact lives count for the app bar, e.g. ♥ 4.
-class _LivesBadge extends ConsumerWidget {
-  const _LivesBadge();
+// ── Custom top bar ─────────────────────────────────────────────────────────
+
+class _GameTopBar extends ConsumerWidget {
+  const _GameTopBar({required this.gameAsync});
+
+  final AsyncValue<GameState> gameAsync;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final lives = ref.watch(livesControllerProvider);
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        const Icon(Icons.favorite, color: Colors.red, size: 20),
-        const SizedBox(width: 4),
-        Text('${lives.lives}',
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-      ],
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: () => Navigator.of(context).pop(),
+            child: Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: Colors.white.withAlpha(20),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.arrow_back_rounded,
+                  color: Colors.white, size: 20),
+            ),
+          ),
+          const SizedBox(width: 12),
+          const Text(
+            'EruMind',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.5,
+            ),
+          ),
+          const Spacer(),
+          Container(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.white.withAlpha(20),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.favorite_rounded,
+                    color: _redLight, size: 16),
+                const SizedBox(width: 5),
+                Text(
+                  '${lives.lives}',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
 
-/// The pre-run gate: hearts and a Play button (or a countdown when out of
-/// lives).
+// ── Run HUD ────────────────────────────────────────────────────────────────
+
+class _RunHud extends StatelessWidget {
+  const _RunHud({required this.state});
+
+  final GameState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      child: Row(
+        children: [
+          _HudChip(
+            label: l10n.banked(state.banked),
+            icon: Icons.savings_rounded,
+            iconColor: const Color(0xFF4ADE80),
+          ),
+          const SizedBox(width: 8),
+          _HudChip(
+            label: l10n.pot(state.pot),
+            icon: Icons.toll_rounded,
+            iconColor: const Color(0xFFFBBF24),
+          ),
+          const Spacer(),
+          Container(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              color: Colors.white.withAlpha(25),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Text(
+              '×${_formatMultiplier(state.multiplier)}',
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w900,
+                fontSize: 14,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HudChip extends StatelessWidget {
+  const _HudChip({
+    required this.label,
+    required this.icon,
+    required this.iconColor,
+  });
+
+  final String label;
+  final IconData icon;
+  final Color iconColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: Colors.white.withAlpha(20),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: iconColor, size: 14),
+          const SizedBox(width: 5),
+          Text(
+            label,
+            style: const TextStyle(
+                color: Colors.white,
+                fontSize: 13,
+                fontWeight: FontWeight.w600),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Lobby ──────────────────────────────────────────────────────────────────
+
 class _LobbyView extends StatelessWidget {
   const _LobbyView();
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(l10n.lobbyReady, style: theme.textTheme.headlineMedium),
-            const SizedBox(height: 24),
+            Text(
+              l10n.lobbyReady,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 24,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 28),
             const _HeartsRow(),
-            const SizedBox(height: 32),
+            const SizedBox(height: 40),
             _PlayButton(label: l10n.play),
           ],
         ),
@@ -88,7 +248,6 @@ class _LobbyView extends StatelessWidget {
   }
 }
 
-/// A full row of hearts: filled for current lives, outlined for the rest.
 class _HeartsRow extends ConsumerWidget {
   const _HeartsRow();
 
@@ -100,11 +259,11 @@ class _HeartsRow extends ConsumerWidget {
       children: [
         for (var i = 0; i < lives.max; i++)
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 5),
             child: Icon(
               i < lives.lives ? Icons.favorite : Icons.favorite_border,
-              color: Colors.red,
-              size: 32,
+              color: i < lives.lives ? _redLight : Colors.white30,
+              size: 34,
             ),
           ),
       ],
@@ -112,7 +271,6 @@ class _HeartsRow extends ConsumerWidget {
   }
 }
 
-/// Lives-gated play control shared by the lobby and the results screen.
 class _PlayButton extends ConsumerWidget {
   const _PlayButton({required this.label});
 
@@ -124,13 +282,35 @@ class _PlayButton extends ConsumerWidget {
     final l10n = AppLocalizations.of(context)!;
 
     if (lives.canPlay) {
-      return FilledButton(
-        onPressed: () => ref.read(gameControllerProvider.notifier).start(),
-        child: Text(label),
+      return GestureDetector(
+        onTap: () => ref.read(gameControllerProvider.notifier).start(),
+        child: Container(
+          padding:
+              const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
+          decoration: BoxDecoration(
+            color: _red,
+            borderRadius: BorderRadius.circular(30),
+            boxShadow: [
+              BoxShadow(
+                color: _red.withAlpha(120),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 17,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ),
       );
     }
 
-    // Out of lives: tick to update the countdown and re-apply regeneration.
     ref.listen(tickerProvider, (_, _) {
       ref.read(livesControllerProvider.notifier).refresh();
     });
@@ -138,59 +318,39 @@ class _PlayButton extends ConsumerWidget {
 
     final interval = ref.read(livesConfigProvider).refillInterval;
     final remaining =
-        lives.timeUntilNext(ref.read(clockProvider)(), interval) ?? Duration.zero;
+        lives.timeUntilNext(ref.read(clockProvider)(), interval) ??
+            Duration.zero;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        FilledButton(onPressed: null, child: Text(l10n.outOfLives)),
-        const SizedBox(height: 12),
-        Text(l10n.nextLifeIn(_formatDuration(remaining)),
-            style: Theme.of(context).textTheme.titleMedium),
+        Container(
+          padding:
+              const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
+          decoration: BoxDecoration(
+            color: Colors.white.withAlpha(20),
+            borderRadius: BorderRadius.circular(30),
+          ),
+          child: Text(
+            l10n.outOfLives,
+            style: const TextStyle(
+                color: Colors.white54,
+                fontSize: 17,
+                fontWeight: FontWeight.w800),
+          ),
+        ),
+        const SizedBox(height: 14),
+        Text(
+          l10n.nextLifeIn(_formatDuration(remaining)),
+          style: const TextStyle(color: Colors.white70, fontSize: 14),
+        ),
       ],
     );
   }
 }
 
-String _formatDuration(Duration d) {
-  final minutes = d.inMinutes.remainder(60).toString().padLeft(2, '0');
-  final seconds = d.inSeconds.remainder(60).toString().padLeft(2, '0');
-  return d.inHours > 0 ? '${d.inHours}:$minutes:$seconds' : '$minutes:$seconds';
-}
+// ── Spinning view ──────────────────────────────────────────────────────────
 
-String _formatMultiplier(double m) =>
-    m == m.roundToDouble() ? m.toInt().toString() : m.toString();
-
-/// A compact run status bar: banked points, the at-risk pot, and the
-/// multiplier.
-class _RunHud extends StatelessWidget {
-  const _RunHud({required this.state});
-
-  final GameState state;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(l10n.banked(state.banked), style: theme.textTheme.titleMedium),
-          Text(l10n.pot(state.pot), style: theme.textTheme.titleMedium),
-          Text(
-            l10n.multiplier(_formatMultiplier(state.multiplier)),
-            style: theme.textTheme.titleMedium
-                ?.copyWith(fontWeight: FontWeight.bold),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// The wheel step: spin to pick a category for the next question.
 class _SpinningView extends ConsumerWidget {
   const _SpinningView({required this.state});
 
@@ -207,7 +367,8 @@ class _SpinningView extends ConsumerWidget {
         _RunHud(state: state),
         Expanded(
           child: categoriesAsync.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
+            loading: () => const Center(
+                child: CircularProgressIndicator(color: Colors.white)),
             error: (err, _) => Center(child: Text('$err')),
             data: (categories) => Center(
               child: Padding(
@@ -215,17 +376,24 @@ class _SpinningView extends ConsumerWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(l10n.spinPrompt,
-                        style: Theme.of(context).textTheme.titleLarge),
-                    const SizedBox(height: 24),
+                    Text(
+                      l10n.spinPrompt,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 28),
                     SizedBox(
                       width: 300,
                       child: CategoryWheel(
                         categories: categories,
                         spinLabel: l10n.spin,
                         onSelected: controller.onCategorySelected,
-                        onSpinStart: () =>
-                            ref.read(audioServiceProvider).play(SoundEffect.spin),
+                        onSpinStart: () => ref
+                            .read(audioServiceProvider)
+                            .play(SoundEffect.spin),
                       ),
                     ),
                   ],
@@ -239,8 +407,8 @@ class _SpinningView extends ConsumerWidget {
   }
 }
 
-/// Shows the current question and its four options, plus the post-answer
-/// decision controls (bank / risk / finish, or end the run on a wrong answer).
+// ── Playfield ──────────────────────────────────────────────────────────────
+
 class _PlayfieldView extends ConsumerWidget {
   const _PlayfieldView({required this.state});
 
@@ -250,7 +418,6 @@ class _PlayfieldView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     final controller = ref.read(gameControllerProvider.notifier);
-    final theme = Theme.of(context);
     final question = state.question!;
     final answered = state.isDecision;
 
@@ -258,44 +425,81 @@ class _PlayfieldView extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _RunHud(state: state),
+        if (!answered)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
+            child: _QuestionTimer(key: ValueKey(question.id)),
+          ),
         Expanded(
           child: SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  if (!answered)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: _QuestionTimer(key: ValueKey(question.id)),
-                    ),
-                  if (state.category != null)
-                    Text(state.category!.name,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                            color: Color(state.category!.colorValue),
-                            fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 12),
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(20),
-                      child: Text(question.text,
-                          style: theme.textTheme.headlineSmall),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Category chip
+                if (state.category != null)
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Color(state.category!.colorValue)
+                            .withAlpha(220),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        state.category!.name,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 13,
+                        ),
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 20),
-                  for (var i = 0; i < question.options.length; i++) ...[
-                    _OptionTile(
-                      label: question.options[i],
-                      state: _optionStateFor(i),
-                      onTap: answered ? null : () => controller.answer(i),
+                const SizedBox(height: 14),
+
+                // Question card
+                Container(
+                  padding: const EdgeInsets.all(22),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withAlpha(60),
+                        blurRadius: 16,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
+                  ),
+                  child: Text(
+                    question.text,
+                    style: const TextStyle(
+                      color: Color(0xFF1A0010),
+                      fontSize: 19,
+                      fontWeight: FontWeight.w600,
+                      height: 1.4,
                     ),
-                    const SizedBox(height: 12),
-                  ],
-                  const SizedBox(height: 12),
-                  if (answered) _decisionControls(context, ref, l10n, controller),
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Answer options
+                for (var i = 0; i < question.options.length; i++) ...[
+                  _OptionTile(
+                    label: question.options[i],
+                    state: _optionStateFor(i),
+                    onTap: answered ? null : () => controller.answer(i),
+                  ),
+                  const SizedBox(height: 10),
                 ],
-              ),
+
+                const SizedBox(height: 8),
+                if (answered)
+                  _decisionControls(context, ref, l10n, controller),
+              ],
             ),
           ),
         ),
@@ -312,22 +516,27 @@ class _PlayfieldView extends ConsumerWidget {
     final correct = state.lastResult?.isCorrect ?? false;
     if (!correct) {
       final livesLeft = ref.watch(livesControllerProvider).lives;
-      // No selection means the timer ran out rather than a wrong tap.
       final message = livesLeft > 0
           ? (state.selectedIndex == null ? l10n.timeUp : l10n.wrongAnswer)
           : l10n.gameOverNoLives;
       return Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(message,
-              style: Theme.of(context)
-                  .textTheme
-                  .titleMedium
-                  ?.copyWith(color: Colors.red.shade700)),
-          const SizedBox(height: 12),
-          FilledButton(
-            onPressed: livesLeft > 0 ? controller.continueAfterWrong : controller.endRun,
-            child: Text(livesLeft > 0 ? l10n.continuePlaying : l10n.seeResults),
+          Text(
+            message,
+            style: const TextStyle(
+                color: Color(0xFFFF6B6B),
+                fontSize: 15,
+                fontWeight: FontWeight.w600),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 14),
+          _ActionButton(
+            label: livesLeft > 0 ? l10n.continuePlaying : l10n.seeResults,
+            onTap: livesLeft > 0
+                ? controller.continueAfterWrong
+                : controller.endRun,
+            filled: true,
           ),
         ],
       );
@@ -338,22 +547,30 @@ class _PlayfieldView extends ConsumerWidget {
         Row(
           children: [
             Expanded(
-              child: FilledButton(
-                onPressed: controller.bank,
-                child: Text(l10n.bank),
+              child: _ActionButton(
+                label: l10n.bank,
+                onTap: controller.bank,
+                filled: true,
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 10),
             Expanded(
-              child: FilledButton.tonal(
-                onPressed: controller.risk,
-                child: Text(l10n.riskIt),
+              child: _ActionButton(
+                label: l10n.riskIt,
+                onTap: controller.risk,
+                filled: false,
               ),
             ),
           ],
         ),
         const SizedBox(height: 8),
-        TextButton(onPressed: controller.endRun, child: Text(l10n.finish)),
+        TextButton(
+          onPressed: controller.endRun,
+          child: Text(
+            l10n.finish,
+            style: const TextStyle(color: Colors.white54),
+          ),
+        ),
       ],
     );
   }
@@ -367,9 +584,8 @@ class _PlayfieldView extends ConsumerWidget {
   }
 }
 
-/// A countdown bar for the current question. When it runs out it tells the
-/// controller (timeUp), which ends the run. Keyed by question id so a new
-/// question restarts it.
+// ── Timer ──────────────────────────────────────────────────────────────────
+
 class _QuestionTimer extends ConsumerStatefulWidget {
   const _QuestionTimer({super.key});
 
@@ -404,26 +620,53 @@ class _QuestionTimerState extends ConsumerState<_QuestionTimer>
 
   @override
   Widget build(BuildContext context) {
+    final totalSeconds =
+        ref.read(questionDurationProvider).inSeconds;
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, _) {
         final remaining = 1 - _controller.value;
-        return ClipRRect(
-          borderRadius: BorderRadius.circular(6),
-          child: LinearProgressIndicator(
-            value: remaining,
-            minHeight: 8,
-            color: remaining < 0.3 ? Colors.red.shade600 : null,
-          ),
+        final secsLeft = (remaining * totalSeconds).ceil();
+        final isUrgent = remaining < 0.3;
+        return Row(
+          children: [
+            Expanded(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: LinearProgressIndicator(
+                  value: remaining,
+                  minHeight: 10,
+                  backgroundColor: Colors.white.withAlpha(30),
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    isUrgent ? _redLight : Colors.white,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            SizedBox(
+              width: 36,
+              child: Text(
+                '${secsLeft}s',
+                style: TextStyle(
+                  color: isUrgent ? _redLight : Colors.white70,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                ),
+                textAlign: TextAlign.right,
+              ),
+            ),
+          ],
         );
       },
     );
   }
 }
 
+// ── Option tile ────────────────────────────────────────────────────────────
+
 enum _OptionVisualState { idle, correct, wrong, dimmed }
 
-/// A single tappable answer option whose colour reflects the result.
 class _OptionTile extends StatelessWidget {
   const _OptionTile({
     required this.label,
@@ -437,30 +680,38 @@ class _OptionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
-    final (Color bg, Color fg) = switch (state) {
-      _OptionVisualState.idle => (scheme.surfaceContainerHighest, scheme.onSurface),
-      _OptionVisualState.correct => (Colors.green.shade600, Colors.white),
-      _OptionVisualState.wrong => (Colors.red.shade600, Colors.white),
-      _OptionVisualState.dimmed => (
-          scheme.surfaceContainerHighest.withValues(alpha: 0.4),
-          scheme.onSurface.withValues(alpha: 0.4),
-        ),
+    final (Color bg, Color fg, Color border) = switch (state) {
+      _OptionVisualState.idle    => (Colors.white, const Color(0xFF1A0010), Colors.transparent),
+      _OptionVisualState.correct => (const Color(0xFF16A34A), Colors.white, Colors.transparent),
+      _OptionVisualState.wrong   => (_red, Colors.white, Colors.transparent),
+      _OptionVisualState.dimmed  => (Colors.white.withAlpha(30), Colors.white54, Colors.transparent),
     };
 
-    return Material(
-      color: bg,
-      borderRadius: BorderRadius.circular(14),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(14),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-          child: Text(
-            label,
-            style: TextStyle(
-                color: fg, fontSize: 17, fontWeight: FontWeight.w600),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding:
+            const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: border, width: 1.5),
+          boxShadow: state == _OptionVisualState.idle
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withAlpha(40),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  )
+                ]
+              : null,
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: fg,
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ),
@@ -468,7 +719,57 @@ class _OptionTile extends StatelessWidget {
   }
 }
 
-/// End-of-run summary with a lives-gated play-again button.
+// ── Action button ──────────────────────────────────────────────────────────
+
+class _ActionButton extends StatelessWidget {
+  const _ActionButton({
+    required this.label,
+    required this.onTap,
+    required this.filled,
+  });
+
+  final String label;
+  final VoidCallback onTap;
+  final bool filled;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          color: filled ? _red : Colors.white.withAlpha(20),
+          borderRadius: BorderRadius.circular(16),
+          border: filled
+              ? null
+              : Border.all(color: Colors.white30, width: 1.5),
+          boxShadow: filled
+              ? [
+                  BoxShadow(
+                    color: _red.withAlpha(100),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  )
+                ]
+              : null,
+        ),
+        child: Text(
+          label,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Results ────────────────────────────────────────────────────────────────
+
 class _ResultsView extends StatelessWidget {
   const _ResultsView({required this.state});
 
@@ -476,42 +777,97 @@ class _ResultsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
-
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(28),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(l10n.roundComplete, style: theme.textTheme.headlineMedium),
+            const Icon(Icons.emoji_events_rounded,
+                color: Color(0xFFFFD700), size: 64),
             const SizedBox(height: 16),
-            Text(l10n.points(state.banked), style: theme.textTheme.displaySmall),
+            Text(
+              l10n.roundComplete,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              l10n.points(state.banked),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 42,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
             const SizedBox(height: 4),
-            Text(l10n.correctAnswers(state.correctCount),
-                style: theme.textTheme.titleMedium),
-            const SizedBox(height: 8),
-            Text(l10n.bestPoints(state.bestScore),
-                style: theme.textTheme.titleMedium),
+            Text(
+              l10n.correctAnswers(state.correctCount),
+              style: const TextStyle(color: Colors.white70, fontSize: 15),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              l10n.bestPoints(state.bestScore),
+              style: const TextStyle(color: Colors.white54, fontSize: 13),
+            ),
             if (state.isNewBest) ...[
-              const SizedBox(height: 12),
-              Chip(
-                avatar: const Icon(Icons.emoji_events, size: 18),
-                label: Text(l10n.newBest),
-                backgroundColor: Colors.amber.shade100,
+              const SizedBox(height: 14),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFD700).withAlpha(30),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                      color: const Color(0xFFFFD700).withAlpha(80),
+                      width: 1),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.emoji_events_rounded,
+                        color: Color(0xFFFFD700), size: 18),
+                    const SizedBox(width: 6),
+                    Text(
+                      l10n.newBest,
+                      style: const TextStyle(
+                          color: Color(0xFFFFD700),
+                          fontWeight: FontWeight.w700),
+                    ),
+                  ],
+                ),
               ),
             ],
             for (final crown in state.newCrowns) ...[
               const SizedBox(height: 8),
-              Chip(
-                avatar: Icon(Icons.emoji_events,
-                    size: 18, color: Colors.amber.shade800),
-                label: Text(l10n.newCrown(crown)),
-                backgroundColor: Colors.amber.shade100,
+              Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFD700).withAlpha(20),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.emoji_events_rounded,
+                        color: Colors.amber.shade600, size: 18),
+                    const SizedBox(width: 6),
+                    Text(
+                      l10n.newCrown(crown),
+                      style: TextStyle(
+                          color: Colors.amber.shade300,
+                          fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ),
               ),
             ],
-            const SizedBox(height: 32),
+            const SizedBox(height: 36),
             _PlayButton(label: l10n.playAgain),
           ],
         ),
@@ -519,3 +875,14 @@ class _ResultsView extends StatelessWidget {
     );
   }
 }
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+
+String _formatDuration(Duration d) {
+  final minutes = d.inMinutes.remainder(60).toString().padLeft(2, '0');
+  final seconds = d.inSeconds.remainder(60).toString().padLeft(2, '0');
+  return d.inHours > 0 ? '${d.inHours}:$minutes:$seconds' : '$minutes:$seconds';
+}
+
+String _formatMultiplier(double m) =>
+    m == m.roundToDouble() ? m.toInt().toString() : m.toString();

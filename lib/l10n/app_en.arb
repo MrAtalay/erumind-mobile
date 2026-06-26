@@ -86,5 +86,13 @@
   "onboardingBody3": "Bank your pot to keep it safe, or risk it for an even bigger multiplier. A wrong answer costs a life, not your pot — the game only ends when your lives run out.",
   "onboardingSkip": "Skip",
   "onboardingNext": "Next",
-  "onboardingGetStarted": "Get started"
+  "onboardingGetStarted": "Get started",
+
+  "menuSinglePlayer": "Solo",
+  "menuMultiplayer": "Versus",
+  "menuPlayer": "Player",
+  "menuTagline": "Learn while having fun",
+  "menuComingSoon": "COMING SOON",
+  "settingsGameSection": "Game",
+  "settingsHowToPlay": "How to play?"
 }

@@ -166,4 +166,25 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get onboardingGetStarted => 'Get started';
+
+  @override
+  String get menuSinglePlayer => 'Solo';
+
+  @override
+  String get menuMultiplayer => 'Versus';
+
+  @override
+  String get menuPlayer => 'Player';
+
+  @override
+  String get menuTagline => 'Learn while having fun';
+
+  @override
+  String get menuComingSoon => 'COMING SOON';
+
+  @override
+  String get settingsGameSection => 'Game';
+
+  @override
+  String get settingsHowToPlay => 'How to play?';
 }

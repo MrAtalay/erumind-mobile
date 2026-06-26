@@ -361,6 +361,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Get started'**
   String get onboardingGetStarted;
+
+  /// No description provided for @menuSinglePlayer.
+  ///
+  /// In en, this message translates to:
+  /// **'Solo'**
+  String get menuSinglePlayer;
+
+  /// No description provided for @menuMultiplayer.
+  ///
+  /// In en, this message translates to:
+  /// **'Versus'**
+  String get menuMultiplayer;
+
+  /// No description provided for @menuPlayer.
+  ///
+  /// In en, this message translates to:
+  /// **'Player'**
+  String get menuPlayer;
+
+  /// No description provided for @menuTagline.
+  ///
+  /// In en, this message translates to:
+  /// **'Learn while having fun'**
+  String get menuTagline;
+
+  /// No description provided for @menuComingSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'COMING SOON'**
+  String get menuComingSoon;
+
+  /// No description provided for @settingsGameSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Game'**
+  String get settingsGameSection;
+
+  /// No description provided for @settingsHowToPlay.
+  ///
+  /// In en, this message translates to:
+  /// **'How to play?'**
+  String get settingsHowToPlay;
 }
 
 class _AppLocalizationsDelegate

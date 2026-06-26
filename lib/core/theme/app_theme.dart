@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 /// We use Material 3 with a single seed color; richer theming comes in the
 /// polish phase.
 abstract final class AppTheme {
-  static const Color seed = Color(0xFF5E35B1); // deep purple
+  static const Color seed = Color(0xFFCC1020); // EruMind red
 
   static ThemeData light() {
     final scheme = ColorScheme.fromSeed(seedColor: seed);
