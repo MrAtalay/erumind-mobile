@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../features/game/logic/game_controller.dart';
+import '../../../services/audio_service.dart';
 import '../data/continent_defs.dart';
 import 'map_game_state.dart';
 
@@ -16,6 +17,14 @@ class MapGameController extends AsyncNotifier<MapGameState> {
   Future<MapGameState> build() async => MapGameState.initial();
 
   void restart() => state = AsyncData(MapGameState.initial());
+
+  void _sfx(SoundEffect effect) {
+    try {
+      ref.read(audioServiceProvider).play(effect);
+    } catch (_) {
+      // Audio is best-effort; never let a missing backend break the game.
+    }
+  }
 
   // ── Phase: selectStart ───────────────────────────────────────────────────
 
@@ -78,8 +87,10 @@ class MapGameController extends AsyncNotifier<MapGameState> {
       ownership[target] = Owner.player;
       roundWinner = Owner.player;
       msg = 'Doğru! $targetName ele geçirildi.';
+      _sfx(SoundEffect.crown);
     } else {
       msg = 'Yanlış! $targetName alınamadı.';
+      _sfx(SoundEffect.wrong);
     }
 
     final gameWinner = _checkWin(ownership);
@@ -164,6 +175,7 @@ class MapGameController extends AsyncNotifier<MapGameState> {
       clearRoundWinner: true,
       clearPlayerTarget: true,
     ));
+    _sfx(SoundEffect.spin);
 
     await Future.delayed(const Duration(milliseconds: 1500));
     final cur = state.value;
@@ -181,6 +193,7 @@ class MapGameController extends AsyncNotifier<MapGameState> {
       msg = wasPlayer
           ? 'Rakip senin $aiName bölgeni ele geçirdi!'
           : 'Rakip $aiName bölgesini ele geçirdi.';
+      _sfx(SoundEffect.crown);
     } else {
       msg = 'Rakip $aiName saldırısında başarısız oldu.';
     }
