@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/game/presentation/game_screen.dart';
+import '../../features/map_game/presentation/category_select_screen.dart';
 import '../../features/map_game/presentation/map_screen.dart';
 import '../../features/menu/presentation/menu_screen.dart';
 import '../../features/onboarding/logic/onboarding_controller.dart';
@@ -21,6 +22,10 @@ GoRouter createAppRouter() => GoRouter(
       routes: [
         GoRoute(path: '/', builder: (context, state) => const _HomeGate()),
         GoRoute(path: '/game', builder: (context, state) => const GameScreen()),
+        GoRoute(
+          path: '/map-game/select',
+          builder: (context, state) => const CategorySelectScreen(),
+        ),
         GoRoute(path: '/map-game', builder: (context, state) => const MapScreen()),
         GoRoute(
           path: '/settings',

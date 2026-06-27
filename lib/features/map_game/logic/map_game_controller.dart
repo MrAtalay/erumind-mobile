@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 
 import '../../../features/game/logic/game_controller.dart';
 import '../../../services/audio_service.dart';
@@ -9,6 +10,10 @@ import 'map_game_state.dart';
 
 final mapGameProvider =
     AsyncNotifierProvider.autoDispose<MapGameController, MapGameState>(MapGameController.new);
+
+/// Category chosen on the select screen for the next match ('mixed' = any).
+/// Read by [MapGameController.build] when a fresh match starts.
+final pendingMatchCategoryProvider = StateProvider<String>((ref) => 'mixed');
 
 class MapGameController extends AsyncNotifier<MapGameState> {
   final _rng = Random();
@@ -19,7 +24,7 @@ class MapGameController extends AsyncNotifier<MapGameState> {
   @override
   Future<MapGameState> build() async {
     _asked.clear();
-    return MapGameState.initial();
+    return MapGameState.initial(categoryId: ref.read(pendingMatchCategoryProvider));
   }
 
   /// Starts a fresh match drawing questions from [categoryId] ('mixed' = any).
