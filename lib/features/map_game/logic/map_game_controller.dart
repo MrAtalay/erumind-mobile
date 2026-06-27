@@ -13,7 +13,7 @@ final mapGameProvider =
 class MapGameController extends AsyncNotifier<MapGameState> {
   final _rng = Random();
 
-  /// Question ids already asked this game — used to avoid repeats.
+  /// Question ids already asked this match — used to avoid repeats.
   final Set<String> _asked = {};
 
   @override
@@ -22,9 +22,15 @@ class MapGameController extends AsyncNotifier<MapGameState> {
     return MapGameState.initial();
   }
 
+  /// Starts a fresh match drawing questions from [categoryId] ('mixed' = any).
+  void startMatch(String categoryId) {
+    _asked.clear();
+    state = AsyncData(MapGameState.initial(categoryId: categoryId));
+  }
+
   void restart() {
     _asked.clear();
-    state = AsyncData(MapGameState.initial());
+    state = AsyncData(MapGameState.initial(categoryId: state.requireValue.categoryId));
   }
 
   void _sfx(SoundEffect effect) {
@@ -35,37 +41,14 @@ class MapGameController extends AsyncNotifier<MapGameState> {
     }
   }
 
-  // ── Phase: selectStart ───────────────────────────────────────────────────
-
-  void selectStart(String continentId) {
-    final s = state.requireValue;
-    if (s.phase != MapGamePhase.selectStart) return;
-
-    // AI picks a different random starting continent
-    final others = kContinents.map((c) => c.id).where((id) => id != continentId).toList()
-      ..shuffle(_rng);
-    final aiStart = others.first;
-
-    final newOwnership = Map<String, Owner>.from(s.ownership)
-      ..[continentId] = Owner.player
-      ..[aiStart] = Owner.ai;
-
-    state = AsyncData(s.copyWith(
-      ownership: newOwnership,
-      phase: MapGamePhase.playerTurn,
-    ));
-  }
-
-  // ── Phase: playerTurn → playerQuestion ──────────────────────────────────
+  // ── Player turn → question ────────────────────────────────────────────────
 
   Future<void> selectTarget(String continentId) async {
     final s = state.requireValue;
     if (s.phase != MapGamePhase.playerTurn) return;
-    if (s.ownership[continentId] == Owner.player) return;
-    if (!_reachableByPlayer(s, continentId)) return;
+    if (!reachableContinentsFor(s).contains(continentId)) return;
 
-    final categoryId = continentById(continentId)?.categoryId;
-    final question = await _fetchRandomQuestion(categoryId);
+    final question = await _fetchRandomQuestion(s.categoryId);
     if (question == null) return;
 
     state = AsyncData(s.copyWith(
@@ -75,7 +58,7 @@ class MapGameController extends AsyncNotifier<MapGameState> {
     ));
   }
 
-  // ── Phase: playerQuestion → result / tiebreakerQuestion ─────────────────
+  // ── Question → result (player only) ───────────────────────────────────────
 
   Future<void> answerQuestion(int selectedIndex) async {
     final s = state.requireValue;
@@ -88,7 +71,8 @@ class MapGameController extends AsyncNotifier<MapGameState> {
     );
 
     final target = s.playerTarget!;
-    final targetName = continentById(target)?.name ?? target;
+    final name = continentById(target)?.name ?? target;
+    final isWar = s.matchPhase == MatchPhase.war;
     final ownership = Map<String, Owner>.from(s.ownership);
 
     String msg;
@@ -96,10 +80,10 @@ class MapGameController extends AsyncNotifier<MapGameState> {
     if (result.isCorrect) {
       ownership[target] = Owner.player;
       roundWinner = Owner.player;
-      msg = 'Doğru! $targetName ele geçirildi.';
+      msg = isWar ? 'Doğru! $name ele geçirildi.' : 'Doğru! $name kapıldı.';
       _sfx(SoundEffect.crown);
     } else {
-      msg = 'Yanlış! $targetName alınamadı.';
+      msg = isWar ? 'Yanlış! $name alınamadı.' : 'Yanlış! $name kapılamadı.';
       _sfx(SoundEffect.wrong);
     }
 
@@ -114,74 +98,26 @@ class MapGameController extends AsyncNotifier<MapGameState> {
     ));
   }
 
-  // ── Phase: tiebreakerQuestion → result ──────────────────────────────────
+  // ── Result → aiTurn → aiResult → playerTurn ───────────────────────────────
 
-  void answerTiebreaker(int optionIndex) {
-    final s = state.requireValue;
-    if (s.phase != MapGamePhase.tiebreakerQuestion) return;
-
-    final tb = s.tiebreaker!;
-    final playerChoice = tb.options[optionIndex];
-    final aiChoice = tb.options[_rng.nextInt(tb.options.length)];
-    final correct = tb.answer;
-
-    final playerDist = (playerChoice - correct).abs();
-    final aiDist = (aiChoice - correct).abs();
-
-    final target = s.playerTarget!;
-    final targetName = continentById(target)?.name ?? target;
-    Map<String, Owner> ownership = Map.from(s.ownership);
-    Owner? roundWinner;
-    String msg;
-
-    if (playerDist < aiDist) {
-      ownership[target] = Owner.player;
-      roundWinner = Owner.player;
-      msg = 'Doğru cevap $correct. Sen $playerChoice, rakip $aiChoice dedi — '
-          '$targetName senin!';
-    } else if (aiDist < playerDist) {
-      ownership[target] = Owner.ai;
-      roundWinner = Owner.ai;
-      msg = 'Doğru cevap $correct. Rakip $aiChoice ile daha yakındı — '
-          '$targetName rakibe gitti.';
-    } else {
-      msg = 'Beraberlik! İkiniz de $playerChoice dediniz (doğru: $correct). '
-          'Sonraki turda tekrar!';
-    }
-
-    final gameWinner = _checkWin(ownership);
-    state = AsyncData(s.copyWith(
-      ownership: ownership,
-      phase: gameWinner != null ? MapGamePhase.gameOver : MapGamePhase.result,
-      resultMessage: msg,
-      roundWinner: roundWinner,
-      winner: gameWinner,
-      clearTiebreaker: true,
-      clearPlayerTarget: true,
-      clearAiTarget: true,
-      clearQuestion: true,
-    ));
-  }
-
-  // ── Phase: result → aiTurn → aiResult → playerTurn ───────────────────────
-
-  /// From the player's result: the rival now takes a *visible* turn — it lines
-  /// up an attack (target highlighted on the map), pauses, then resolves.
   Future<void> startAiTurn() async {
     final s = state.requireValue;
     if (s.phase != MapGamePhase.result) return;
 
     final aiTarget = _pickAiTarget(s);
     if (aiTarget == null) {
-      _toPlayerTurn(s); // rival is boxed in — skip straight back to the player
+      _toPlayerTurn(s); // rival is boxed in — back to the player
       return;
     }
-    final aiName = continentById(aiTarget)?.name ?? aiTarget;
+    final name = continentById(aiTarget)?.name ?? aiTarget;
+    final isWar = s.matchPhase == MatchPhase.war;
 
     state = AsyncData(s.copyWith(
       phase: MapGamePhase.aiTurn,
       aiTarget: aiTarget,
-      resultMessage: 'Rakip $aiName bölgesine saldırıyor…',
+      resultMessage: isWar
+          ? 'Rakip $name bölgesine saldırıyor…'
+          : 'Rakip $name bölgesini kapmaya çalışıyor…',
       clearRoundWinner: true,
       clearPlayerTarget: true,
     ));
@@ -192,20 +128,21 @@ class MapGameController extends AsyncNotifier<MapGameState> {
     if (cur == null || cur.phase != MapGamePhase.aiTurn) return;
 
     final ownership = Map<String, Owner>.from(cur.ownership);
-    final wasPlayer = ownership[aiTarget] == Owner.player;
-    final success = _rng.nextDouble() < (wasPlayer ? 0.35 : 0.60);
+    final success = _rng.nextDouble() < (isWar ? 0.40 : 0.65);
 
     String msg;
     Owner? roundWinner;
     if (success) {
       ownership[aiTarget] = Owner.ai;
       roundWinner = Owner.ai;
-      msg = wasPlayer
-          ? 'Rakip senin $aiName bölgeni ele geçirdi!'
-          : 'Rakip $aiName bölgesini ele geçirdi.';
+      msg = isWar
+          ? 'Rakip senin $name bölgeni ele geçirdi!'
+          : 'Rakip $name bölgesini kaptı.';
       _sfx(SoundEffect.crown);
     } else {
-      msg = 'Rakip $aiName saldırısında başarısız oldu.';
+      msg = isWar
+          ? 'Rakip $name saldırısında başarısız oldu.'
+          : 'Rakip $name bölgesini kapamadı.';
     }
 
     final gameWinner = _checkWin(ownership);
@@ -235,29 +172,27 @@ class MapGameController extends AsyncNotifier<MapGameState> {
     ));
   }
 
-  // ── Helpers ──────────────────────────────────────────────────────────────
-
-  bool _reachableByPlayer(MapGameState s, String id) {
-    return s.playerContinents.any((ownedId) {
-      final def = continentById(ownedId);
-      return def?.adjacentIds.contains(id) ?? false;
-    });
-  }
+  // ── Helpers ───────────────────────────────────────────────────────────────
 
   String? _pickAiTarget(MapGameState s) {
-    final reachable = <String>{};
-    for (final ownedId in s.aiContinents) {
-      final def = continentById(ownedId);
-      if (def == null) continue;
-      for (final adjId in def.adjacentIds) {
-        if (s.ownership[adjId] != Owner.ai) reachable.add(adjId);
+    if (s.matchPhase == MatchPhase.expansion) {
+      final neutral = s.ownership.entries
+          .where((e) => e.value == Owner.neutral)
+          .map((e) => e.key)
+          .toList();
+      if (neutral.isEmpty) return null;
+      return neutral[_rng.nextInt(neutral.length)];
+    }
+    // War: attack a player region adjacent to AI territory.
+    final targets = <String>{};
+    for (final owned in s.aiContinents) {
+      for (final adj in continentById(owned)?.adjacentIds ?? const []) {
+        if (s.ownership[adj] == Owner.player) targets.add(adj);
       }
     }
-    if (reachable.isEmpty) return null;
-    // Prefer neutral continents; occasionally attack player
-    final neutral = reachable.where((id) => s.ownership[id] == Owner.neutral).toList();
-    final pool = neutral.isNotEmpty ? neutral : reachable.toList();
-    return pool[_rng.nextInt(pool.length)];
+    if (targets.isEmpty) return null;
+    final list = targets.toList();
+    return list[_rng.nextInt(list.length)];
   }
 
   Owner? _checkWin(Map<String, Owner> ownership) {
@@ -267,18 +202,17 @@ class MapGameController extends AsyncNotifier<MapGameState> {
     return null;
   }
 
-  Future<dynamic> _fetchRandomQuestion(String? categoryId) async {
+  Future<dynamic> _fetchRandomQuestion(String categoryId) async {
     try {
       final all = await ref.read(questionRepositoryProvider).getQuestions();
       if (all.isEmpty) return null;
 
-      // Prefer the continent's category; fall back to all if it has none.
-      var pool = categoryId == null
+      // 'mixed' draws from every category; otherwise filter to the match category.
+      var pool = categoryId == 'mixed'
           ? all
           : all.where((q) => q.categoryId == categoryId).toList();
       if (pool.isEmpty) pool = all;
 
-      // Avoid repeats within a game; if the pool is exhausted, allow repeats.
       final fresh = pool.where((q) => !_asked.contains(q.id)).toList();
       final picks = fresh.isNotEmpty ? fresh : pool;
 
@@ -291,15 +225,21 @@ class MapGameController extends AsyncNotifier<MapGameState> {
   }
 }
 
-// Utility used by MapScreen to compute reachable continents for the player.
-Set<String> reachableContinentsFor(MapGameState state) {
-  final reachable = <String>{};
-  for (final ownedId in state.playerContinents) {
-    final def = continentById(ownedId);
-    if (def == null) continue;
-    for (final adjId in def.adjacentIds) {
-      if (state.ownership[adjId] != Owner.player) reachable.add(adjId);
+/// Regions the player may act on this turn:
+/// - expansion → every neutral region (claim empty land),
+/// - war → enemy regions adjacent to the player's territory.
+Set<String> reachableContinentsFor(MapGameState s) {
+  if (s.matchPhase == MatchPhase.expansion) {
+    return s.ownership.entries
+        .where((e) => e.value == Owner.neutral)
+        .map((e) => e.key)
+        .toSet();
+  }
+  final out = <String>{};
+  for (final owned in s.playerContinents) {
+    for (final adj in continentById(owned)?.adjacentIds ?? const []) {
+      if (s.ownership[adj] == Owner.ai) out.add(adj);
     }
   }
-  return reachable;
+  return out;
 }

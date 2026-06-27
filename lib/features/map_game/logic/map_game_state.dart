@@ -1,56 +1,64 @@
 import '../../../data/models/question.dart';
-import '../data/tiebreaker_questions.dart';
 
 enum Owner { neutral, player, ai }
 
+/// The two stages of a match (Bil ve Fethet v2):
+/// - [expansion]: the map has empty land; players claim neutral regions.
+/// - [war]: the map is full; players take each other's regions (world conquest).
+enum MatchPhase { expansion, war }
+
 enum MapGamePhase {
-  selectStart,        // player picks starting continent
-  playerTurn,         // player picks a continent to attack
-  playerQuestion,     // MC question is being shown
-  tiebreakerQuestion, // numeric tiebreaker (both answered correctly)
-  result,             // player's move resolved — shown over the map
-  aiTurn,             // rival is attacking (target highlighted on the map)
-  aiResult,           // rival's move resolved — shown over the map
+  playerTurn,     // player picks a region (expansion: empty / war: enemy)
+  playerQuestion, // question is being shown
+  result,         // player's move resolved — shown over the map
+  aiTurn,         // rival is acting (target highlighted on the map)
+  aiResult,       // rival's move resolved — shown over the map
   gameOver,
 }
 
 class MapGameState {
   final Map<String, Owner> ownership;
   final MapGamePhase phase;
+
+  /// The single quiz category this whole match draws questions from.
+  final String categoryId;
+
   final String? playerTarget;
   final String? aiTarget;
   final Question? currentQuestion;
-  final int? lastCorrectIndex;       // correct answer index from last MC question
-  final int? lastPlayerChoice;       // player's MC choice
-  final TiebreakerQuestion? tiebreaker;
   final String? resultMessage;
-  final Owner? roundWinner;          // who won this round's combat (null = draw/skip)
-  final Owner? winner;               // overall game winner
+  final Owner? roundWinner;
+  final Owner? winner;
 
   const MapGameState({
     required this.ownership,
     required this.phase,
+    required this.categoryId,
     this.playerTarget,
     this.aiTarget,
     this.currentQuestion,
-    this.lastCorrectIndex,
-    this.lastPlayerChoice,
-    this.tiebreaker,
     this.resultMessage,
     this.roundWinner,
     this.winner,
   });
 
-  factory MapGameState.initial() {
+  factory MapGameState.initial({String categoryId = 'mixed'}) {
     const ids = [
       'north_america', 'south_america', 'europe',
       'africa', 'asia', 'australia', 'antarctica',
     ];
     return MapGameState(
       ownership: {for (final id in ids) id: Owner.neutral},
-      phase: MapGamePhase.selectStart,
+      phase: MapGamePhase.playerTurn,
+      categoryId: categoryId,
     );
   }
+
+  /// Expansion while any land is still neutral; war once the map is full.
+  MatchPhase get matchPhase =>
+      ownership.values.any((o) => o == Owner.neutral)
+          ? MatchPhase.expansion
+          : MatchPhase.war;
 
   List<String> get playerContinents => ownership.entries
       .where((e) => e.value == Owner.player)
@@ -62,37 +70,35 @@ class MapGameState {
       .map((e) => e.key)
       .toList();
 
+  int get neutralCount =>
+      ownership.values.where((o) => o == Owner.neutral).length;
+
   int get playerCount => playerContinents.length;
   int get aiCount => aiContinents.length;
 
   MapGameState copyWith({
     Map<String, Owner>? ownership,
     MapGamePhase? phase,
+    String? categoryId,
     String? playerTarget,
     String? aiTarget,
     Question? currentQuestion,
-    int? lastCorrectIndex,
-    int? lastPlayerChoice,
-    TiebreakerQuestion? tiebreaker,
     String? resultMessage,
     Owner? roundWinner,
     Owner? winner,
     bool clearPlayerTarget = false,
     bool clearAiTarget = false,
     bool clearQuestion = false,
-    bool clearTiebreaker = false,
     bool clearResult = false,
     bool clearRoundWinner = false,
   }) {
     return MapGameState(
       ownership: ownership ?? this.ownership,
       phase: phase ?? this.phase,
+      categoryId: categoryId ?? this.categoryId,
       playerTarget: clearPlayerTarget ? null : (playerTarget ?? this.playerTarget),
       aiTarget: clearAiTarget ? null : (aiTarget ?? this.aiTarget),
       currentQuestion: clearQuestion ? null : (currentQuestion ?? this.currentQuestion),
-      lastCorrectIndex: clearQuestion ? null : (lastCorrectIndex ?? this.lastCorrectIndex),
-      lastPlayerChoice: clearQuestion ? null : (lastPlayerChoice ?? this.lastPlayerChoice),
-      tiebreaker: clearTiebreaker ? null : (tiebreaker ?? this.tiebreaker),
       resultMessage: clearResult ? null : (resultMessage ?? this.resultMessage),
       roundWinner: clearRoundWinner ? null : (roundWinner ?? this.roundWinner),
       winner: winner ?? this.winner,

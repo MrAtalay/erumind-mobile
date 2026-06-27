@@ -91,7 +91,6 @@ class _GameContentState extends ConsumerState<_GameContent>
   // player can watch the board change.
   static const _focusPhases = {
     MapGamePhase.playerQuestion,
-    MapGamePhase.tiebreakerQuestion,
     MapGamePhase.gameOver,
   };
 
@@ -148,8 +147,7 @@ class _GameContentState extends ConsumerState<_GameContent>
   Widget build(BuildContext context) {
     final state = widget.state;
     final phase = state.phase;
-    final isSelecting =
-        phase == MapGamePhase.selectStart || phase == MapGamePhase.playerTurn;
+    final isSelecting = phase == MapGamePhase.playerTurn;
     final isBanner = phase == MapGamePhase.result ||
         phase == MapGamePhase.aiTurn ||
         phase == MapGamePhase.aiResult;
@@ -316,7 +314,6 @@ class _FocusOverlay extends StatelessWidget {
                 child: SingleChildScrollView(
                   child: switch (state.phase) {
                     MapGamePhase.playerQuestion => _QuestionPanel(state: state),
-                    MapGamePhase.tiebreakerQuestion => _TiebreakerPanel(state: state),
                     MapGamePhase.gameOver => _GameOverPanel(state: state),
                     _ => const SizedBox.shrink(),
                   },
@@ -341,15 +338,41 @@ class _HeaderOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final category = kCategoryLabels[state.categoryId] ?? 'Karışık';
+    final phaseLabel =
+        state.matchPhase == MatchPhase.expansion ? 'Genişleme' : 'Savaş';
     return Padding(
       padding: const EdgeInsets.fromLTRB(10, 8, 10, 0),
-      child: Row(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          _GlassButton(icon: Icons.arrow_back_rounded, onTap: () => context.pop()),
-          const Spacer(),
-          _ScorePill(state: state),
-          const Spacer(),
-          const SizedBox(width: 42),
+          Row(
+            children: [
+              _GlassButton(icon: Icons.arrow_back_rounded, onTap: () => context.pop()),
+              const Spacer(),
+              _ScorePill(state: state),
+              const Spacer(),
+              const SizedBox(width: 42),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.black.withAlpha(120),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.white.withAlpha(22)),
+            ),
+            child: Text(
+              '$category  ·  $phaseLabel',
+              style: const TextStyle(
+                color: Color(0xFFE6C878),
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.3,
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -487,14 +510,14 @@ class _InstructionChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final reachable = reachableContinentsFor(state);
     final String text;
-    if (state.phase == MapGamePhase.selectStart) {
-      text = 'Başlangıç kıtanı seç — haritaya dokun';
+    if (reachable.isEmpty) {
+      text = 'Hamle yapacak bölgen yok!';
+    } else if (state.matchPhase == MatchPhase.expansion) {
+      text = 'Genişleme — boş bir bölgeyi soruyla kap';
     } else {
-      final reachable = reachableContinentsFor(state);
-      text = reachable.isEmpty
-          ? 'Ulaşabileceğin kıta yok!'
-          : 'Senin turun — altın çerçeveli komşu bir kıtaya dokun';
+      text = 'Savaş — altın çerçeveli düşman bölgesine saldır';
     }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
@@ -532,17 +555,13 @@ class _MapArea extends ConsumerWidget {
     this.flashValue = 1,
   });
 
-  bool get _isInteractive =>
-      state.phase == MapGamePhase.selectStart || state.phase == MapGamePhase.playerTurn;
+  bool get _isInteractive => state.phase == MapGamePhase.playerTurn;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final reachable = _isInteractive ? reachableContinentsFor(state) : const <String>{};
     final highlighted = state.phase == MapGamePhase.playerTurn ? hoveredContinent : null;
-
-    final candidates = state.phase == MapGamePhase.selectStart
-        ? kContinents.map((c) => c.id).toSet()
-        : reachable;
+    final candidates = reachable;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -576,7 +595,6 @@ class _MapArea extends ConsumerWidget {
                 attackPulse: attackPulse,
                 flashId: flashId,
                 flashValue: flashValue,
-                showCategories: _isInteractive,
               ),
             ),
           ),
@@ -586,11 +604,8 @@ class _MapArea extends ConsumerWidget {
   }
 
   void _onTap(BuildContext context, WidgetRef ref, String id) {
-    final ctrl = ref.read(mapGameProvider.notifier);
-    if (state.phase == MapGamePhase.selectStart) {
-      ctrl.selectStart(id);
-    } else if (state.phase == MapGamePhase.playerTurn) {
-      ctrl.selectTarget(id);
+    if (state.phase == MapGamePhase.playerTurn) {
+      ref.read(mapGameProvider.notifier).selectTarget(id);
     }
   }
 }
@@ -608,14 +623,13 @@ class _QuestionPanel extends ConsumerWidget {
 
     final targetDef = state.playerTarget != null ? continentById(state.playerTarget!) : null;
     final targetName = targetDef?.name.replaceAll('\n', ' ') ?? '';
-    final categoryLabel =
-        targetDef != null ? kCategoryLabels[targetDef.categoryId] : null;
+    final categoryLabel = kCategoryLabels[state.categoryId] ?? 'Karışık';
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _TargetBadge(text: categoryLabel ?? 'Soru'),
+        _TargetBadge(text: categoryLabel),
         const SizedBox(height: 8),
         Text('$targetName için mücadele',
             style: TextStyle(color: Colors.white.withAlpha(150), fontSize: 12.5),
@@ -629,37 +643,6 @@ class _QuestionPanel extends ConsumerWidget {
         _AnswerGrid(
           labels: q.options,
           onSelect: (i) => ref.read(mapGameProvider.notifier).answerQuestion(i),
-        ),
-      ],
-    );
-  }
-}
-
-// ── Panel: tiebreakerQuestion ─────────────────────────────────────────────────
-
-class _TiebreakerPanel extends ConsumerWidget {
-  final MapGameState state;
-  const _TiebreakerPanel({required this.state});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final tb = state.tiebreaker;
-    if (tb == null) return const SizedBox.shrink();
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        const _TargetBadge(text: 'KAPIŞMA! En yakın cevabı bul'),
-        const SizedBox(height: 22),
-        Text(tb.text,
-            style: const TextStyle(
-                color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700, height: 1.3),
-            textAlign: TextAlign.center),
-        const SizedBox(height: 22),
-        _AnswerGrid(
-          labels: tb.options.map((o) => o.toString()).toList(),
-          onSelect: (i) => ref.read(mapGameProvider.notifier).answerTiebreaker(i),
         ),
       ],
     );

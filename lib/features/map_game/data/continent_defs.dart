@@ -25,6 +25,7 @@ class ContinentDef {
 
 /// Turkish display names for the quiz categories, keyed by category id.
 const Map<String, String> kCategoryLabels = {
+  'mixed': 'Karışık',
   'science': 'Bilim',
   'history': 'Tarih',
   'geography': 'Coğrafya',
