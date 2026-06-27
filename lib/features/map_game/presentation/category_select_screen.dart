@@ -1,15 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../logic/map_game_controller.dart';
 
 /// Lobby-lite: pick the single category the whole Bil ve Fethet match will draw
-/// its questions from, then start the match. (Portrait; the match itself is
-/// landscape.)
-class CategorySelectScreen extends ConsumerWidget {
+/// its questions from, then start the match.
+///
+/// This screen owns the landscape lock for the *whole* Bil ve Fethet flow:
+/// it goes landscape on enter and restores portrait on exit, so the player
+/// rotates once entering the mode (not mid-flow at match start) and the map
+/// screen can stay landscape when popped back to.
+class CategorySelectScreen extends ConsumerStatefulWidget {
   const CategorySelectScreen({super.key});
 
+  @override
+  ConsumerState<CategorySelectScreen> createState() => _CategorySelectScreenState();
+}
+
+class _CategorySelectScreenState extends ConsumerState<CategorySelectScreen> {
   static const _categories = <_Cat>[
     _Cat('mixed', 'Karışık', Icons.shuffle_rounded, Color(0xFFB07A2E)),
     _Cat('science', 'Bilim', Icons.science_rounded, Color(0xFF1976D2)),
@@ -20,13 +30,29 @@ class CategorySelectScreen extends ConsumerWidget {
     _Cat('entertainment', 'Eğlence', Icons.movie_rounded, Color(0xFFC2185B)),
   ];
 
-  void _start(BuildContext context, WidgetRef ref, String id) {
+  @override
+  void initState() {
+    super.initState();
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+  }
+
+  @override
+  void dispose() {
+    // Leaving the Bil ve Fethet mode → back to the portrait app.
+    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+    super.dispose();
+  }
+
+  void _start(String id) {
     ref.read(pendingMatchCategoryProvider.notifier).state = id;
     context.push('/map-game');
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -41,7 +67,7 @@ class CategorySelectScreen extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(8, 8, 16, 0),
+                padding: const EdgeInsets.fromLTRB(8, 6, 16, 0),
                 child: Row(
                   children: [
                     IconButton(
@@ -52,29 +78,36 @@ class CategorySelectScreen extends ConsumerWidget {
                     const Text('Bil ve Fethet',
                         style: TextStyle(
                             color: Colors.white,
-                            fontSize: 20,
+                            fontSize: 19,
                             fontWeight: FontWeight.w800)),
+                    const SizedBox(width: 14),
+                    const Expanded(
+                      child: Text(
+                        'Kategori seç — tüm sorular o kategoriden gelir.',
+                        style: TextStyle(color: Colors.white60, fontSize: 13),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
                   ],
                 ),
               ),
-              const Padding(
-                padding: EdgeInsets.fromLTRB(24, 6, 24, 18),
-                child: Text(
-                  'Kategori seç — bu maçın tüm soruları o kategoriden gelir.',
-                  style: TextStyle(color: Colors.white60, fontSize: 14, height: 1.3),
-                ),
-              ),
+              const SizedBox(height: 10),
               Expanded(
-                child: GridView.count(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 14,
-                  crossAxisSpacing: 14,
-                  childAspectRatio: 1.5,
-                  children: [
-                    for (final c in _categories)
-                      _CategoryCard(cat: c, onTap: () => _start(context, ref, c.id)),
-                  ],
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final cols = constraints.maxWidth > 700 ? 4 : 2;
+                    return GridView.count(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                      crossAxisCount: cols,
+                      mainAxisSpacing: 12,
+                      crossAxisSpacing: 12,
+                      childAspectRatio: 1.55,
+                      children: [
+                        for (final c in _categories)
+                          _CategoryCard(cat: c, onTap: () => _start(c.id)),
+                      ],
+                    );
+                  },
                 ),
               ),
             ],
@@ -102,28 +135,28 @@ class _CategoryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: cat.color.withValues(alpha: 0.18),
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(16),
         child: Container(
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(color: cat.color.withValues(alpha: 0.55), width: 1.4),
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                width: 52,
-                height: 52,
-                decoration: BoxDecoration(color: cat.color, borderRadius: BorderRadius.circular(14)),
-                child: Icon(cat.icon, color: Colors.white, size: 28),
+                width: 46,
+                height: 46,
+                decoration: BoxDecoration(color: cat.color, borderRadius: BorderRadius.circular(12)),
+                child: Icon(cat.icon, color: Colors.white, size: 25),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 8),
               Text(cat.label,
                   style: const TextStyle(
-                      color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
+                      color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700)),
             ],
           ),
         ),

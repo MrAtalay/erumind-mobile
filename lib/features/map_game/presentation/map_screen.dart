@@ -26,16 +26,13 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   @override
   void initState() {
     super.initState();
+    // Stay landscape. The whole Bil ve Fethet flow is landscape; the
+    // category-select (lobby) screen owns restoring portrait when the player
+    // leaves the mode, so popping back to it must NOT flip to portrait here.
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.landscapeLeft,
       DeviceOrientation.landscapeRight,
     ]);
-  }
-
-  @override
-  void dispose() {
-    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-    super.dispose();
   }
 
   @override
