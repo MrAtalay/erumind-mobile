@@ -156,6 +156,13 @@ lib/
   translated to Turkish (2026-06-22) — the game's content is Turkish-first. The TR/EN UI
   toggle (Phase 4) still exists for chrome strings, but quiz content itself is Turkish-only
   for now; there's no per-locale question set.
+- **"Bil ve Fethet" map-conquest mode: PARKED (2026-06-29).** Eray prototyped a parallel
+  category-quiz × world-map-conquest mode on the `map-mechanic` branch (17 commits,
+  `lib/features/map_game/`, see `docs/bil-ve-fethet-design.md` on that branch) — fully
+  offline/vs-AI, no tests, several open design questions (region-capture rule, turn rules,
+  map granularity, online sync model), and no Firestore/Functions work started. The team
+  decided to shelve it for now and continue from `main`'s wheel/lives game. Branch is left
+  untouched on `origin/map-mechanic` for a possible later revisit; not merged, not deleted.
 - Phase 7 — Async duello + leaderboard. Phase 8 — AdMob + IAP.
 
 ## 6b. Lessons & pitfalls (read before persistence/services/widget tests)
