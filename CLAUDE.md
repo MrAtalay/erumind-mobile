@@ -163,6 +163,17 @@ lib/
   map granularity, online sync model), and no Firestore/Functions work started. The team
   decided to shelve it for now and continue from `main`'s wheel/lives game. Branch is left
   untouched on `origin/map-mechanic` for a possible later revisit; not merged, not deleted.
+- **Release signing set up for Google Play (2026-06-29):** `android/app/build.gradle.kts`
+  now reads `android/key.properties` (gitignored, never commit) and signs release builds
+  with a real upload keystore (`android/upload-keystore.jks`, also gitignored) instead of
+  the debug key. Falls back to the debug key automatically if `key.properties` is missing
+  (e.g. a teammate's machine without it), so `flutter run --release` still works for everyone.
+  Verified with `flutter build appbundle --release` + `jarsigner -verify` — signed by the
+  upload cert, not the debug one. **The keystore file and its password are the single most
+  critical artifact for this app**: lose them and the app can never be updated on Play
+  again under the same listing. Back up `android/upload-keystore.jks` and the password
+  (shared with the team outside the repo) somewhere durable (password manager + offline
+  copy) before the first Play Console upload.
 - Phase 7 — Async duello + leaderboard. Phase 8 — AdMob + IAP.
 
 ## 6b. Lessons & pitfalls (read before persistence/services/widget tests)
