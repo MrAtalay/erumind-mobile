@@ -174,6 +174,15 @@ lib/
   again under the same listing. Back up `android/upload-keystore.jks` and the password
   (shared with the team outside the repo) somewhere durable (password manager + offline
   copy) before the first Play Console upload.
+- **App display name fixed (2026-06-29):** launcher/home-screen label was lowercase
+  "erumind" on both platforms; now "EruMind" (`android/app/src/main/AndroidManifest.xml`'s
+  `android:label`, iOS `CFBundleDisplayName`).
+- **Privacy policy page added (2026-06-29):** `docs/privacy-policy.html`, meant to be served
+  via GitHub Pages (Settings → Pages → Deploy from branch → `main` / `/docs`) at
+  `https://mratalay.github.io/erumind-mobile/privacy-policy.html` — needed for the Play
+  Console listing even for closed testing. Covers what the app actually does today
+  (anonymous Firebase auth, local-only game data, read-only Firestore content fetch, no
+  ads/analytics/IAP yet); update it if any of that changes.
 - Phase 7 — Async duello + leaderboard. Phase 8 — AdMob + IAP.
 
 ## 6b. Lessons & pitfalls (read before persistence/services/widget tests)
